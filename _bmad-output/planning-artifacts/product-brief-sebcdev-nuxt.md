@@ -96,11 +96,7 @@ Architecture de contenu à entrées multiples servant 3 personas simultanément 
 
 Voix unique documentant la pensée technique en deux langues, capturant nuances culturelles d'apprentissage et élargissant portée géographique sans traduction mécanique. Contenu natif dans les deux langues, pas de traduction automatique.
 
-### 5. Anti-Stack Philosophy
-
-Positionnement contre-intuitif dans un marché saturé d'outils : "Votre problème n'est pas le manque d'outils, mais l'excès de complexité non comprise". Réduire friction par soustraction et compréhension, pas addition et automatisation. Antidote à l'influenceur tech qui pousse constamment de nouveaux outils.
-
-### 6. Timing Parfait — Fenêtre de 6-18 Mois
+### 5. Timing Parfait — Fenêtre de 6-18 Mois
 
 Le marché est **maintenant** prêt : crise visible, douleur universelle, recherche active de solutions, mais avant que les grands acteurs (Vercel, Supabase, GitHub) ne saturent l'espace documentaire. Documenter en temps réel = avantage temporel non rattrapable.
 
@@ -177,6 +173,8 @@ Trafic venant de Perplexity, ChatGPT, Gemini = preuve que contenu considéré co
 **Architecture de Contenu Multi-Piliers**
 - Blog Nuxt avec SSR, recherche/filtres, pagination
 - Contenu bilingue FR/EN avec @nuxtjs/i18n (core value proposition)
+- **Workflow FR-first** : Rédaction française (assistée IA) → Traduction IA → Relecture rapide (15-30 min)
+- 100% des articles publiés dans les deux langues simultanément
 - Organisation par 3 piliers : IA (40%), Ingénierie (30%), UX (30%)
 - Articles cross-piliers mettant en valeur l'intersection des trois expertises
 - Système de tags permettant navigation par pilier ET par thème transversal
@@ -192,8 +190,6 @@ Trafic venant de Perplexity, ChatGPT, Gemini = preuve que contenu considéré co
 **Expérience Développeur (Lucas)**
 - Blocs de code avec bouton "Copy" + syntax highlighting (Shiki)
 - Badge langue sur chaque snippet
-- Embed CodeSandbox/StackBlitz pour démonstrations live côte à côte
-- Navigation ToC rapide vers sections "Live Demo"
 
 **Expérience Apprentissage (Chloé)**
 - ToC montrant structure pédagogique complète
@@ -202,7 +198,6 @@ Trafic venant de Perplexity, ChatGPT, Gemini = preuve que contenu considéré co
 - Highlight de la section active pour contexte constant
 
 **Expérience Architecture (Maxime)**
-- Téléchargement direct templates GitHub (gists/repos)
 - Tableaux comparatifs intégrés (solutions/coûts/performances)
 - Ancres directes ToC vers sections "Résultats" et "Comparatifs"
 - Temps de lecture par section pour audit rapide
@@ -230,7 +225,7 @@ Trafic venant de Perplexity, ChatGPT, Gemini = preuve que contenu considéré co
 
 **Newsletter (Basique)**
 - Formulaire embed simple (Buttondown/Mailchimp iframe)
-- Objectif conversion : 2% des visiteurs uniques
+- Objectif : 50 abonnés minimum au M6 (taux conversion ~2%)
 - Automation avancée reportée à v2.0
 
 ---
