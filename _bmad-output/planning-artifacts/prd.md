@@ -1007,9 +1007,141 @@ const useLLMStream = () => {
 
 ## 9. Architecture Technique GEO
 
-### 9.1-9.4 [CONTENU EXISTANT CONSERVÉ]
+### 9.1 Composants Vue
 
-### 9.5 MVP Technique Scopé (NOUVEAU)
+#### Composants Core
+
+| Composant | Description | Priorité |
+|-----------|-------------|----------|
+| `TableOfContents.vue` | Sidebar sticky avec navigation sections | P0 |
+| `ProgressBar.vue` | Barre de progression lecture | P0 |
+| `CodeBlock.vue` | Bloc code avec syntax highlighting + copy | P0 |
+| `ArticleHeader.vue` | Titre, meta, temps lecture, tags | P0 |
+| `ArticleMeta.vue` | Auteur, date, pilier badge | P1 |
+| `DetailsCollapsible.vue` | Wrapper styled pour `<details>` | P1 |
+| `PillarBadge.vue` | Badge coloré IA/Ingénierie/UX | P1 |
+| `ReadingTime.vue` | Estimation temps lecture | P1 |
+| `CopyButton.vue` | Bouton copier avec feedback | P0 |
+| `LanguageBadge.vue` | Badge langage sur code blocks | P1 |
+| `ComparisonTable.vue` | Tableau comparatif responsive | P2 |
+| `FAQSection.vue` | Section FAQ avec Schema injection | P2 |
+| `RelatedArticles.vue` | Articles liés par tags/pilier | P2 |
+| `NewsletterForm.vue` | Formulaire inscription embed | P1 |
+| `DarkModeToggle.vue` | Switch mode sombre/clair | P0 |
+
+#### Composants Layout
+
+| Composant | Description | Priorité |
+|-----------|-------------|----------|
+| `AppHeader.vue` | Navigation principale + search | P0 |
+| `AppFooter.vue` | Footer avec liens + newsletter | P1 |
+| `ArticleLayout.vue` | Layout 2 colonnes article + ToC | P0 |
+| `BlogLayout.vue` | Liste articles avec filtres | P0 |
+| `SidebarNav.vue` | Navigation mobile hamburger | P1 |
+
+### 9.2 Composables
+
+| Composable | Description | Dépendances |
+|------------|-------------|-------------|
+| `useScrollSpy` | Tracking position scroll pour ToC | - |
+| `useReadingProgress` | Calcul % progression lecture | - |
+| `useCopyToClipboard` | Copier texte avec feedback | - |
+| `useArticleSchema` | Génération Schema.org | Article type |
+| `useSeoMeta` | Meta tags dynamiques | @nuxtjs/seo |
+| `useCodeHighlight` | Syntax highlighting Shiki | shiki |
+| `useTableOfContents` | Extraction headings pour ToC | - |
+| `useAnalytics` | Events Plausible custom | @nuxtjs/plausible |
+| `usePillarFilter` | Filtrage articles par pilier | - |
+| `useSearchArticles` | Recherche côté client | - |
+
+### 9.3 Spécifications Composants Clés
+
+#### TableOfContents.vue
+
+```typescript
+interface Props {
+  headings: Heading[]
+  activeId: string
+  showProgress?: boolean
+  showReadingTime?: boolean
+}
+
+interface Heading {
+  id: string
+  text: string
+  level: 2 | 3
+  children?: Heading[]
+}
+
+// Features:
+// - Sticky sidebar (desktop) / Drawer (mobile)
+// - Highlight section active
+// - Smooth scroll on click
+// - Progress bar optionnelle
+// - Temps lecture par section
+```
+
+#### CodeBlock.vue
+
+```typescript
+interface Props {
+  code: string
+  language: string
+  filename?: string
+  highlights?: number[]  // Lignes à highlighter
+  showLineNumbers?: boolean
+}
+
+// Features:
+// - Syntax highlighting (Shiki)
+// - Bouton Copy avec feedback
+// - Badge langage
+// - Ligne highlighting
+// - Numéros de ligne optionnels
+// - Nom fichier optionnel
+```
+
+#### useScrollSpy
+
+```typescript
+interface UseScrollSpyOptions {
+  offset?: number       // Offset top pour trigger
+  throttle?: number     // Throttle scroll events (ms)
+}
+
+interface UseScrollSpyReturn {
+  activeId: Ref<string>
+  progress: Ref<number>  // 0-100
+}
+
+// Usage:
+const { activeId, progress } = useScrollSpy({
+  offset: 100,
+  throttle: 100
+})
+```
+
+### 9.4 Stack Technique
+
+### 9.4 Stack Technique
+
+| Catégorie | Technologie | Version | Justification |
+|-----------|-------------|---------|---------------|
+| **Framework** | Nuxt | **4.2.x** | Dernière version stable (déc 2024), nouvelle structure app/, amélioration performances |
+| **Content** | @nuxt/content | **3.10.0** | Collections typées, Preview API, compatibilité Nuxt 4, stockage SQL |
+| **CMS Visual** | nuxt-studio | **beta** | Module gratuit open-source, édition visuelle avec GitHub, preview en temps réel |
+| **Styling** | Tailwind CSS | **4.1.17** | Version stable (nov 2025), engine Oxide 5x plus rapide, CSS-first config, @theme directive |
+| **UI Components** | shadcn-vue | **2.3.2** | Copy-paste components, Reka UI, support Tailwind v4, module shadcn-nuxt 2.4.3 |
+| **Deploy** | Cloudflare Pages/Workers | - | Edge SSR, gratuit, D1/R2 storage, compatibilité Nuxt 4 |
+| **Analytics** | @nuxtjs/plausible | **2.0.1** | GDPR-ready, léger, auto-imported composables, proxy intégré |
+| **SEO** | @nuxtjs/seo | **3.3.0** | Suite complète (sitemap, robots, OG, schema.org), compatibilité Nuxt 4 |
+| **Syntax Highlighting** | Shiki | **latest** | Intégration native @nuxt/content |
+| **Icons** | @nuxt/icon | **latest** | Icônes à la demande |
+| **Images** | @nuxt/image | **latest** | Optimisation automatique |
+| **Color Mode** | @nuxtjs/color-mode | **latest** | Dark mode natif |
+| **Fonts** | @nuxt/fonts | **latest** | Optimisation web fonts |
+
+### 9.5 MVP Technique Scopé
 
 #### Principe : P0 Uniquement pour M6
 
