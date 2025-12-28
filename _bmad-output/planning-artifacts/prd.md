@@ -3,10 +3,14 @@
 
 ---
 
-**Document Version**: 2.0  
-**Date**: 2025-12-28  
-**Auteur**: Negus Salomon  
-**Statut**: Draft — En cours de validation  
+**Document Version**: 3.0
+**Date**: 2025-12-28
+**Auteur**: Negus Salomon
+**Statut**: Draft — En cours de validation
+
+---
+
+> **Note**: Les spécifications techniques et architecturales ont été extraites vers le document [architecture.md](./architecture.md).
 
 ---
 
@@ -374,7 +378,7 @@ Activation du calendrier éditorial (1 article/semaine + news) et démarrage de 
 
 ---
 
-### 2.4 Validation Personas (NOUVEAU)
+### 2.4 Validation Personas
 
 #### Source Actuelle des Personas
 
@@ -414,7 +418,7 @@ Si les interviews révèlent des frictions totalement différentes :
 
 ---
 
-## 3. Analyse Concurrentielle (NOUVEAU)
+## 3. Analyse Concurrentielle
 
 ### 3.1 Paysage Francophone
 
@@ -468,7 +472,7 @@ Si les interviews révèlent des frictions totalement différentes :
 
 ---
 
-## 4. Stratégie Distribution M1-M6 (NOUVEAU)
+## 4. Stratégie Distribution M1-M6
 
 ### 4.1 Objectif
 
@@ -538,7 +542,7 @@ Si les interviews révèlent des frictions totalement différentes :
 
 ---
 
-## 5. Stratégie Bilingue (NOUVEAU)
+## 5. Stratégie Bilingue
 
 ### 5.1 Décision Initiale
 
@@ -560,16 +564,7 @@ Si les interviews révèlent des frictions totalement différentes :
 | **Phase 3** | M10-M12 | 50% articles FR-first, 50% traduits EN |
 | **Phase 4** | M13+ | Contenu natif EN pour sujets à audience internationale |
 
-### 5.3 Implémentation Technique
-
-| Élément | Solution |
-|---------|----------|
-| Routing | `/fr/article-slug` et `/en/article-slug` |
-| CMS | Champs localisés dans Nuxt Content |
-| SEO | hreflang tags, sitemap localisé |
-| Default | FR (`/` redirige vers `/fr/`) |
-
-### 5.4 Critères Traduction
+### 5.3 Critères Traduction
 
 Un article mérite traduction EN si :
 - Top 20% par trafic
@@ -577,7 +572,7 @@ Un article mérite traduction EN si :
 - Potentiel SEO international (volume recherche EN)
 - Temps depuis publication > 2 mois (stable)
 
-### 5.5 Traduction : Manuelle vs IA
+### 5.4 Traduction : Manuelle vs IA
 
 | Approche | M7-M12 | M13+ |
 |----------|--------|------|
@@ -660,187 +655,9 @@ Event Name: llms_txt_access
 
 ---
 
-## 7. Architecture Technique GEO
+## 7. Structure Contenu Answer-First
 
-### 7.1 SSR (Server-Side Rendering)
-
-**Pourquoi SSR est critique pour GEO**:
-- Crawlers IA préfèrent HTML pré-rendu
-- Contenu disponible immédiatement (pas de JS execution)
-- Meilleure indexation des blocs de code
-
-**Configuration Nuxt**:
-
-```typescript
-// nuxt.config.ts
-export default defineNuxtConfig({
-  ssr: true,
-  
-  routeRules: {
-    // Pré-rendu statique pour articles
-    '/blog/**': { prerender: true },
-    
-    // Cache long pour contenu stable
-    '/blog/**': { 
-      cache: { 
-        maxAge: 60 * 60 * 24 // 24h
-      } 
-    }
-  },
-  
-  nitro: {
-    prerender: {
-      crawlLinks: true,
-      routes: ['/sitemap.xml', '/llms.txt']
-    }
-  }
-})
-```
-
-### 7.2 llms.txt
-
-**Fichier de contexte pour LLMs** — Standard émergent pour aider les IA à comprendre le site.
-
-```markdown
-# /public/llms.txt
-
-# sebc.dev — Blog Technique Multi-Piliers
-
-## À Propos
-Blog technique francophone documentant l'intersection de:
-- Intelligence Artificielle (RAG, agents, LLM tooling)
-- Ingénierie Logicielle (architecture, clean code, patterns)
-- UX (design systems, accessibilité)
-
-## Auteur
-Développeur fullstack autodidacte, expertise Nuxt/Vue/TypeScript.
-Approche "Learning in Public" avec transparence sur le processus.
-
-## Structure Contenu
-- Format "Pattern Onion": plusieurs niveaux de profondeur
-- Code TypeScript strict et production-ready
-- Bilingue FR/EN
-
-## Topics Principaux
-- Nuxt 4 streaming et SSR
-- RAG avec Cloudflare Workers AI
-- Architecture hexagonale TypeScript
-- Design Systems accessibles
-- Patterns intégration IA legacy
-
-## Pour les LLMs
-- Privilégier les blocs de code comme source
-- Les articles incluent des comparatifs chiffrés
-- Le ton est technique mais accessible
-
-## Sitemap
-/sitemap.xml
-
-## Contact
-contact@sebc.dev
-```
-
-### 7.3 Schema Markup
-
-**Structured Data pour articles techniques**:
-
-```typescript
-// composables/useArticleSchema.ts
-export const useArticleSchema = (article: Article) => {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'TechArticle',
-    
-    headline: article.title,
-    description: article.description,
-    author: {
-      '@type': 'Person',
-      name: 'Negus Salomon',
-      url: 'https://sebc.dev/about'
-    },
-    
-    datePublished: article.publishedAt,
-    dateModified: article.updatedAt,
-    
-    // Spécifique tech
-    proficiencyLevel: article.level, // 'Beginner' | 'Intermediate' | 'Advanced'
-    dependencies: article.techStack, // ['Nuxt', 'TypeScript', 'Cloudflare']
-    
-    // Code samples
-    hasPart: article.codeBlocks.map(block => ({
-      '@type': 'SoftwareSourceCode',
-      programmingLanguage: block.language,
-      codeSampleType: 'snippet'
-    })),
-    
-    // Catégorisation
-    about: {
-      '@type': 'Thing',
-      name: article.pillar // 'IA' | 'Ingénierie' | 'UX'
-    },
-    
-    // Métriques
-    timeRequired: `PT${article.readingTime}M`,
-    wordCount: article.wordCount
-  }
-}
-```
-
-**FAQ Schema pour questions fréquentes**:
-
-```typescript
-// Pour articles avec section FAQ
-const faqSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: article.faqs.map(faq => ({
-    '@type': 'Question',
-    name: faq.question,
-    acceptedAnswer: {
-      '@type': 'Answer',
-      text: faq.answer
-    }
-  }))
-}
-```
-
-### 7.4 Checklist GEO par Article
-
-```markdown
-## Checklist Publication GEO
-
-### Avant Publication
-- [ ] Titre contient question/terme exact recherché
-- [ ] Meta description = réponse directe (150 chars)
-- [ ] H1 unique, H2/H3 hiérarchisés logiquement
-- [ ] Premier paragraphe = réponse Answer-First
-
-### Contenu
-- [ ] Code blocks avec langage spécifié
-- [ ] Tous les code blocks ont bouton Copy
-- [ ] Au moins 1 schéma/diagramme explicatif
-- [ ] Section FAQ si applicable
-- [ ] Temps de lecture affiché
-
-### Technique
-- [ ] Schema TechArticle injecté
-- [ ] Open Graph tags complets
-- [ ] hreflang si version EN existe
-- [ ] Images avec alt text descriptif
-- [ ] Liens internes vers articles liés
-
-### Post-Publication
-- [ ] Ajouter entrée dans llms.txt
-- [ ] Test prompt GEO (Perplexity)
-- [ ] Vérifier indexation Google (48h)
-- [ ] Soumettre sitemap mis à jour
-```
-
----
-
-## 8. Structure Contenu Answer-First
-
-### 8.1 Principe Answer-First
+### 7.1 Principe Answer-First
 
 **Règle d'or**: La réponse à la question du titre doit apparaître dans les 100 premiers mots.
 
@@ -849,7 +666,7 @@ Pourquoi:
 - Lecteurs scannent avant de s'engager
 - Réduit taux de rebond
 
-### 8.2 Template Article Type
+### 7.2 Template Article Type
 
 ```markdown
 ---
@@ -938,7 +755,7 @@ updatedAt: 2025-01-15
 *Mis à jour le [DATE] — [Changelog si modification majeure]*
 ```
 
-### 8.3 Règles de Rédaction
+### 7.3 Règles de Rédaction
 
 #### Titres (H1)
 
@@ -954,13 +771,13 @@ updatedAt: 2025-01-15
 
 ```markdown
 <!-- ✅ BON: Réponse immédiate -->
-Pour streamer les réponses LLM dans Nuxt sans erreur TypeScript, 
-utilisez le composable `useLLMStream` avec typage générique et 
+Pour streamer les réponses LLM dans Nuxt sans erreur TypeScript,
+utilisez le composable `useLLMStream` avec typage générique et
 gestion d'erreur intégrée. Voici le code complet:
 
 <!-- ❌ MAUVAIS: Introduction vague -->
-L'intelligence artificielle transforme notre façon de développer. 
-Dans cet article, nous allons explorer les différentes approches 
+L'intelligence artificielle transforme notre façon de développer.
+Dans cet article, nous allons explorer les différentes approches
 possibles pour intégrer des réponses en streaming...
 ```
 
@@ -978,7 +795,7 @@ export const useLLMStream = () => {
   const content = ref('')
   const error = ref<Error | null>(null)
   const isStreaming = ref(false)
-  
+
   // ...
 }
 ```
@@ -1005,205 +822,7 @@ const useLLMStream = () => {
 
 ---
 
-## 9. Architecture Technique GEO
-
-### 9.1 Composants Vue
-
-#### Composants Core
-
-| Composant | Description | Priorité |
-|-----------|-------------|----------|
-| `TableOfContents.vue` | Sidebar sticky avec navigation sections | P0 |
-| `ProgressBar.vue` | Barre de progression lecture | P0 |
-| `CodeBlock.vue` | Bloc code avec syntax highlighting + copy | P0 |
-| `ArticleHeader.vue` | Titre, meta, temps lecture, tags | P0 |
-| `ArticleMeta.vue` | Auteur, date, pilier badge | P1 |
-| `DetailsCollapsible.vue` | Wrapper styled pour `<details>` | P1 |
-| `PillarBadge.vue` | Badge coloré IA/Ingénierie/UX | P1 |
-| `ReadingTime.vue` | Estimation temps lecture | P1 |
-| `CopyButton.vue` | Bouton copier avec feedback | P0 |
-| `LanguageBadge.vue` | Badge langage sur code blocks | P1 |
-| `ComparisonTable.vue` | Tableau comparatif responsive | P2 |
-| `FAQSection.vue` | Section FAQ avec Schema injection | P2 |
-| `RelatedArticles.vue` | Articles liés par tags/pilier | P2 |
-| `NewsletterForm.vue` | Formulaire inscription embed | P1 |
-| `DarkModeToggle.vue` | Switch mode sombre/clair | P0 |
-
-#### Composants Layout
-
-| Composant | Description | Priorité |
-|-----------|-------------|----------|
-| `AppHeader.vue` | Navigation principale + search | P0 |
-| `AppFooter.vue` | Footer avec liens + newsletter | P1 |
-| `ArticleLayout.vue` | Layout 2 colonnes article + ToC | P0 |
-| `BlogLayout.vue` | Liste articles avec filtres | P0 |
-| `SidebarNav.vue` | Navigation mobile hamburger | P1 |
-
-### 9.2 Composables
-
-| Composable | Description | Dépendances |
-|------------|-------------|-------------|
-| `useScrollSpy` | Tracking position scroll pour ToC | - |
-| `useReadingProgress` | Calcul % progression lecture | - |
-| `useCopyToClipboard` | Copier texte avec feedback | - |
-| `useArticleSchema` | Génération Schema.org | Article type |
-| `useSeoMeta` | Meta tags dynamiques | @nuxtjs/seo |
-| `useCodeHighlight` | Syntax highlighting Shiki | shiki |
-| `useTableOfContents` | Extraction headings pour ToC | - |
-| `useAnalytics` | Events Plausible custom | @nuxtjs/plausible |
-| `usePillarFilter` | Filtrage articles par pilier | - |
-| `useSearchArticles` | Recherche côté client | - |
-
-### 9.3 Spécifications Composants Clés
-
-#### TableOfContents.vue
-
-```typescript
-interface Props {
-  headings: Heading[]
-  activeId: string
-  showProgress?: boolean
-  showReadingTime?: boolean
-}
-
-interface Heading {
-  id: string
-  text: string
-  level: 2 | 3
-  children?: Heading[]
-}
-
-// Features:
-// - Sticky sidebar (desktop) / Drawer (mobile)
-// - Highlight section active
-// - Smooth scroll on click
-// - Progress bar optionnelle
-// - Temps lecture par section
-```
-
-#### CodeBlock.vue
-
-```typescript
-interface Props {
-  code: string
-  language: string
-  filename?: string
-  highlights?: number[]  // Lignes à highlighter
-  showLineNumbers?: boolean
-}
-
-// Features:
-// - Syntax highlighting (Shiki)
-// - Bouton Copy avec feedback
-// - Badge langage
-// - Ligne highlighting
-// - Numéros de ligne optionnels
-// - Nom fichier optionnel
-```
-
-#### useScrollSpy
-
-```typescript
-interface UseScrollSpyOptions {
-  offset?: number       // Offset top pour trigger
-  throttle?: number     // Throttle scroll events (ms)
-}
-
-interface UseScrollSpyReturn {
-  activeId: Ref<string>
-  progress: Ref<number>  // 0-100
-}
-
-// Usage:
-const { activeId, progress } = useScrollSpy({
-  offset: 100,
-  throttle: 100
-})
-```
-
-### 9.4 Stack Technique
-
-### 9.4 Stack Technique
-
-| Catégorie | Technologie | Version | Justification |
-|-----------|-------------|---------|---------------|
-| **Framework** | Nuxt | **4.2.x** | Dernière version stable (déc 2024), nouvelle structure app/, amélioration performances |
-| **Content** | @nuxt/content | **3.10.0** | Collections typées, Preview API, compatibilité Nuxt 4, stockage SQL |
-| **CMS Visual** | nuxt-studio | **beta** | Module gratuit open-source, édition visuelle avec GitHub, preview en temps réel |
-| **Styling** | Tailwind CSS | **4.1.17** | Version stable (nov 2025), engine Oxide 5x plus rapide, CSS-first config, @theme directive |
-| **UI Components** | shadcn-vue | **2.3.2** | Copy-paste components, Reka UI, support Tailwind v4, module shadcn-nuxt 2.4.3 |
-| **Deploy** | Cloudflare Pages/Workers | - | Edge SSR, gratuit, D1/R2 storage, compatibilité Nuxt 4 |
-| **Analytics** | @nuxtjs/plausible | **2.0.1** | GDPR-ready, léger, auto-imported composables, proxy intégré |
-| **SEO** | @nuxtjs/seo | **3.3.0** | Suite complète (sitemap, robots, OG, schema.org), compatibilité Nuxt 4 |
-| **Syntax Highlighting** | Shiki | **latest** | Intégration native @nuxt/content |
-| **Icons** | @nuxt/icon | **latest** | Icônes à la demande |
-| **Images** | @nuxt/image | **latest** | Optimisation automatique |
-| **Color Mode** | @nuxtjs/color-mode | **latest** | Dark mode natif |
-| **Fonts** | @nuxt/fonts | **latest** | Optimisation web fonts |
-
-### 9.5 MVP Technique Scopé
-
-#### Principe : P0 Uniquement pour M6
-
-La liste de features du PRD v1 est trop longue. **Pour M6, seul le P0 est livré.**
-
-#### Composants P0 (Must Have M6)
-
-| Composant | Justification |
-|-----------|---------------|
-| `ArticleLayout.vue` | Core reading experience |
-| `BlogLayout.vue` | Liste articles |
-| `AppHeader.vue` | Navigation |
-| `CodeBlock.vue` | Code snippets copiables |
-| `TableOfContents.vue` | Navigation article |
-| `CopyButton.vue` | Action principale Lucas |
-| `DarkModeToggle.vue` | Attente utilisateur standard |
-| `ProgressBar.vue` | Engagement UX |
-
-#### Composants P1 (Nice to Have M6, sinon M9)
-
-| Composant | Report M9 Acceptable |
-|-----------|---------------------|
-| `NewsletterForm.vue` | Oui, popup externe OK |
-| `RelatedArticles.vue` | Oui, liens manuels OK |
-| `FAQSection.vue` | Oui, details/summary HTML OK |
-| `ArticleMeta.vue` | Oui, inline dans layout OK |
-
-#### Composants P2 (M12+)
-
-| Composant | Justification Report |
-|-----------|---------------------|
-| `ComparisonTable.vue` | Tableau Markdown suffit |
-| `SearchArticles.vue` | Ctrl+F suffit avec <20 articles |
-| Serveur Discord | Pas avant 500 UV |
-
-#### Stack Technique M6
-
-| Catégorie | Choix | Version | Justification |
-|-----------|-------|---------|---------------|
-| Framework | **Nuxt 3.x** | 3.15+ | Stable, pas Nuxt 4 (breaking changes risquées) |
-| UI | Tailwind CSS | 3.x | Stable, Tailwind 4 si stable M6 |
-| Content | Nuxt Content | 3.x | Officiel, maintenu |
-| SEO | @nuxtjs/seo | latest | All-in-one |
-| Analytics | Plausible | - | GDPR-ready, simple |
-| Deploy | Cloudflare Pages | - | Gratuit, edge SSR |
-
-**Décision Nuxt 4** : Attendre release stable officielle. Prévoir migration M9-M12 si API stabilisée.
-
-#### Critères Definition of Done M6
-
-| Critère | Mesure |
-|---------|--------|
-| Blog fonctionnel | 12 articles publiés, navigation OK |
-| Performance | Lighthouse >90 toutes catégories |
-| SEO | Schema.org, sitemap, meta OK |
-| Mobile | Responsive, touch-friendly |
-| Dark mode | Fonctionnel |
-| Copy code | Fonctionnel avec feedback |
-
----
-
-### 10. Calendrier Éditorial & Cadence
+## 8. Calendrier Éditorial & Cadence
 
 > **Note** : Cette section s'active uniquement en Phase 1 (à partir de Février 2025).
 
@@ -1230,9 +849,9 @@ La liste de features du PRD v1 est trop longue. **Pour M6, seul le P0 est livré
 
 ---
 
-## 11. Points de Décision (EXISTANT + AJUSTÉ)
+## 9. Points de Décision
 
-### 11.1 Checkpoint M3
+### 9.1 Checkpoint M3
 
 | Signal | Vert | Orange | Rouge |
 |--------|------|--------|-------|
@@ -1246,7 +865,7 @@ La liste de features du PRD v1 est trop longue. **Pour M6, seul le P0 est livré
 - 🟠 Orange : Ajuster scope ou fréquence, revalider personas
 - 🔴 Rouge : Pivot (autre niche, autre format, ou pause)
 
-### 11.2 Décision M6: Validation MVP
+### 9.2 Décision M6: Validation MVP
 
 #### SCALE UP si:
 
@@ -1275,7 +894,7 @@ La liste de features du PRD v1 est trop longue. **Pour M6, seul le P0 est livré
 | 0 engagement social | Audience pas connectée |
 | Pression "expert" insupportable | Format Learning in Public ne marche pas |
 
-### 11.3 Décision M12: Direction Long-terme
+### 9.3 Décision M12: Direction Long-terme
 
 #### SCALE UP AGRESSIF si:
 
@@ -1304,9 +923,9 @@ La liste de features du PRD v1 est trop longue. **Pour M6, seul le P0 est livré
 
 ---
 
-## 12. Roadmap Détaillée
+## 10. Roadmap Détaillée
 
-### 12.1 Vue d'Ensemble
+### 10.1 Vue d'Ensemble
 
 ```
 M0          M6          M9          M12         M18         M24
@@ -1321,7 +940,7 @@ M0          M6          M9          M12         M18         M24
 └───────────┴───────────┴───────────┴───────────┴───────────┘
 ```
 
-### 12.2 M6 — Fin MVP
+### 10.2 M6 — Fin MVP
 
 #### Livrables Techniques
 
@@ -1347,7 +966,7 @@ M0          M6          M9          M12         M18         M24
 | Newsletter abonnés | 50 |
 | AI Referral Traffic | 10% |
 
-### 12.3 M9 — Automation
+### 10.3 M9 — Automation
 
 #### Livrables
 
@@ -1367,7 +986,7 @@ M0          M6          M9          M12         M18         M24
 | Taux ouverture NL | > 45% |
 | Articles total | 26 |
 
-### 12.4 M12 — Premier Produit
+### 10.4 M12 — Premier Produit
 
 #### Livrables
 
@@ -1383,12 +1002,12 @@ M0          M6          M9          M12         M18         M24
 nuxt-ai-starter/
 ├── README.md
 ├── nuxt.config.ts
-├── 
+├──
 ├── composables/
 │   ├── useLLMStream.ts
 │   ├── useRAG.ts
 │   └── useAuth.ts
-├── 
+├──
 ├── server/
 │   ├── api/
 │   │   ├── chat.ts
@@ -1396,12 +1015,12 @@ nuxt-ai-starter/
 │   └── services/
 │       ├── llm.service.ts
 │       └── vector.service.ts
-├── 
+├──
 ├── components/
 │   ├── ChatInterface.vue
 │   ├── StreamingText.vue
 │   └── design-system/
-├── 
+├──
 └── docs/
     ├── architecture.md
     ├── deployment.md
@@ -1418,7 +1037,7 @@ nuxt-ai-starter/
 | Inbound Consulting | 2-3/mois |
 | Backlinks Qualité | 20 |
 
-### 12.5 M18 — Expansion Produits
+### 10.5 M18 — Expansion Produits
 
 #### Nouveaux Livrables
 
@@ -1446,7 +1065,7 @@ nuxt-ai-starter/
 | MRR Produits | 300€ |
 | MRR Total (+ Consulting) | 800€ |
 
-### 12.6 M24 — Autorité Établie
+### 10.6 M24 — Autorité Établie
 
 #### Livrables
 
@@ -1470,9 +1089,9 @@ nuxt-ai-starter/
 
 ---
 
-## 13. Monétisation
+## 11. Monétisation
 
-### 13.1 Répartition Cible Revenus
+### 11.1 Répartition Cible Revenus
 
 | Source | Part M12 | Part M24 |
 |--------|----------|----------|
@@ -1481,7 +1100,7 @@ nuxt-ai-starter/
 | Sponsoring | 0% | 15% |
 | Communauté/Newsletter Premium | 10% | 10% |
 
-### 13.2 Produits Digitaux par Segment
+### 11.2 Produits Digitaux par Segment
 
 #### Pour Indie Hackers (Maxime) — Quick Ship
 
@@ -1510,7 +1129,7 @@ nuxt-ai-starter/
 | Scaling Guide: Indie → Enterprise | Migration path documenté | 59€ | 5 |
 | Bundle Complet | Tous les templates | 149€ | 3 |
 
-### 13.3 Pricing Strategy
+### 11.3 Pricing Strategy
 
 #### Principes
 
@@ -1527,7 +1146,7 @@ nuxt-ai-starter/
 | Divjoy | React Starter | $149 | 49€ | Architecture + UX |
 | Tailwind UI | Components | $299 | Inclus | Accessibilité native |
 
-### 13.4 Sponsoring (M12+)
+### 11.4 Sponsoring (M12+)
 
 #### Critères d'Acceptation
 
@@ -1557,9 +1176,9 @@ nuxt-ai-starter/
 
 ---
 
-## 14. Expansion Post-MVP
+## 12. Expansion Post-MVP
 
-### 14.1 Nouvelles Audiences (M12+)
+### 12.1 Nouvelles Audiences (M12+)
 
 | Audience | Timing | Contenu Adapté |
 |----------|--------|----------------|
@@ -1569,7 +1188,7 @@ nuxt-ai-starter/
 | **Juniors Code IA** | M12+ | "Sortir du Vibe Coding" (série) |
 | **Seniors Legacy** | M15+ | "Moderniser sans tout casser" |
 
-### 14.2 Expansion Technologique (M18+)
+### 12.2 Expansion Technologique (M18+)
 
 | Technologie | Timing | Approche |
 |-------------|--------|----------|
@@ -1580,7 +1199,7 @@ nuxt-ai-starter/
 
 **Principe**: Toujours garder l'approche 3 piliers (IA × Ingénierie × UX)
 
-### 14.3 Sujets par Pilier — Vision Complète
+### 12.3 Sujets par Pilier — Vision Complète
 
 #### IA (40%)
 
@@ -1621,7 +1240,7 @@ nuxt-ai-starter/
 | Prototyping IA | Intermédiaire | P2 |
 | Research Methods | Intermédiaire | P3 |
 
-### 14.4 Articles Cross-Piliers (Valeur Unique)
+### 12.4 Articles Cross-Piliers (Valeur Unique)
 
 | Article | Piliers | Priorité |
 |---------|---------|----------|
@@ -1636,19 +1255,21 @@ nuxt-ai-starter/
 
 ## Annexes
 
-### A. Résumé des Modifications v2.0
+### A. Documents Liés
 
-| Lacune PRD v1 | Solution v2.0 |
-|---------------|---------------|
-| Validation personas floue | §2.4 Plan interviews + sondages |
-| Charge travail irréaliste | §1.5 Budget 8h/semaine rédaction, 2 articles/mois |
-| Différenciation vague | §1.3 Tableau comparatif concurrents |
-| Distribution sous-documentée | §4 Stratégie complète M1-M6 |
-| Bilingue non clarifié | §5 FR-first, EN post-MVP |
-| Risque Nuxt 4 | §9.5 Rester Nuxt 3.x jusqu'à stable |
-| MVP trop chargé | §9.5 P0 uniquement |
+| Document | Description |
+|----------|-------------|
+| [architecture.md](./architecture.md) | Spécifications techniques, stack, composants, SSR/GEO |
 
-### B. Prochaines Étapes
+### B. Résumé des Modifications v3.0
+
+| Modification | Détail |
+|--------------|--------|
+| Extraction architecture | Sections 7 et 9 déplacées vers architecture.md |
+| Renumérotation sections | 8→7, 10→8, 11→9, 12→10, 13→11, 14→12 |
+| Ajout référence | Lien vers architecture.md en en-tête |
+
+### C. Prochaines Étapes
 
 1. ☐ Valider budget temps avec planning réel semaine type
 2. ☐ Recruter 5 personnes pour interviews personas (M1)
@@ -1656,7 +1277,7 @@ nuxt-ai-starter/
 4. ☐ Rédiger premier article pilote
 5. ☐ Setup Plausible + events custom
 
-### C. Glossaire
+### D. Glossaire
 
 | Terme | Définition |
 |-------|------------|
@@ -1668,7 +1289,7 @@ nuxt-ai-starter/
 | **Vibe Coding** | Coder au feeling sans comprendre le code |
 | **TJM** | Taux Journalier Moyen (consulting/freelance) |
 
-### D. Références
+### E. Références
 
 - [Nuxt Documentation](https://nuxt.com/docs)
 - [Tailwind CSS](https://tailwindcss.com)
@@ -1684,4 +1305,4 @@ nuxt-ai-starter/
 |---------|------|---------------|
 | 1.0 | 2025-12-28 | Création initiale |
 | 2.0 | 2025-12-28 | Révision Claude v1 |
-| 3.0 | 2025-12-28 | Changement de la gestion du temps et deadlines |
+| 3.0 | 2025-12-28 | Extraction architecture vers document séparé, renumérotation sections |
