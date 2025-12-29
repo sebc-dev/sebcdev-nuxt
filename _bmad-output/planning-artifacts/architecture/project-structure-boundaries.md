@@ -101,7 +101,7 @@ sebc-dev/
 │   └── navigation.ts                    # NavItem, Breadcrumb
 ├── .env.example                         # Variables environnement
 ├── .gitignore
-├── .npmrc                               # Config pnpm 10 (lifecycle scripts)
+├── pnpm-workspace.yaml                  # Config pnpm 10 (optionnel, alternative au champ pnpm dans package.json)
 ├── components.json                      # Config shadcn-vue
 ├── content.config.ts                    # Collections Content 3
 ├── nuxt.config.ts                       # Config Nuxt principale
@@ -111,13 +111,16 @@ sebc-dev/
 └── wrangler.toml                        # Config Cloudflare Pages (optionnel)
 ```
 
-**Configuration .npmrc (pnpm 10):**
-```yaml
-# Autoriser explicitement les lifecycle scripts pour packages spécifiques
-pnpm.onlyBuiltDependencies[]=sharp
-pnpm.onlyBuiltDependencies[]=esbuild
-pnpm.onlyBuiltDependencies[]=pagefind
+**Configuration pnpm 10 (dans package.json) :**
+```json
+{
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "sharp", "pagefind"]
+  }
+}
 ```
+
+> **Note :** La syntaxe `.npmrc` avec `pnpm.onlyBuiltDependencies[]` est incorrecte pour pnpm 10.
 
 ## Architectural Boundaries
 
@@ -156,7 +159,7 @@ Vue Components (display)
 
 ```
 User Input → Pagefind API → Index Chunks Download → Results → Command Palette
-              (36KB core)    (FR/EN stemming)
+           (36KB API client)  (FR/EN stemming)
 ```
 
 ## Requirements to Structure Mapping
@@ -182,7 +185,7 @@ User Input → Pagefind API → Index Chunks Download → Results → Command Pa
 | **Plausible Analytics** | Script + runtimeConfig | `nuxt.config.ts`, `app.vue` |
 | **Cloudflare Pages** | Build output + Pagefind | `wrangler.toml`, `nuxt.config.ts` |
 | **GitHub** | Git push → auto-deploy | `.github/CODEOWNERS` |
-| **Pagefind** | Post-build hook | `nuxt.config.ts` (hooks.nitro:build:public-assets) |
+| **Pagefind** | Script post-build | `package.json` (script build: "nuxt build && npx pagefind...") |
 
 ## Incompatibilités Identifiées
 
@@ -195,7 +198,7 @@ User Input → Pagefind API → Index Chunks Download → Results → Command Pa
 | `experimental.inlineSSRStyles` | ❌ Renommé en Nuxt 4 | `features.inlineStyles` |
 | `radix-vue` | ❌ Rebrandé (février 2025) | `reka-ui` |
 | `@zod/mini` package | ❌ Déprécié | `import { z } from 'zod'` ou `'zod/mini'` |
-| `hooks.build:done` Pagefind | ❌ Timing incorrect | `hooks.nitro:build:public-assets` |
+| `hooks.build:done` Pagefind | ❌ Timing incorrect | Script `package.json` post-build (plus robuste pour SSG) |
 
 ## Paramètres Cloudflare Pages
 
@@ -212,7 +215,7 @@ User Input → Pagefind API → Index Chunks Download → Results → Command Pa
 - Framework preset: `Nuxt.js`
 - Build command: `pnpm run build`
 - Build output directory: `.output/public`
-- Node version: `24.12.0` ou plus récent
+- Node version: `22 LTS` (version stable recommandée)
 
 **Avantages vérifiés (tier gratuit)** :
 - Bande passante illimitée (pas de frais d'egress)

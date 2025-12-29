@@ -132,12 +132,12 @@ nitro: {
   },
 }
 
-// Pagefind post-build (après génération des assets publics)
-hooks: {
-  'nitro:build:public-assets': async () => {
-    const { exec } = await import('child_process')
-    exec('npx pagefind --site .output/public')
-  },
+// Route Rules - Cache Cloudflare optimisé
+routeRules: {
+  // Cache statique agressif pour assets buildés (1 an, immutable)
+  '/assets/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
+  // Cache court pour HTML SSG (permet rollbacks rapides)
+  '/**': { headers: { 'cache-control': 'public, max-age=60, s-maxage=60' } },
 }
 ```
 
@@ -146,13 +146,19 @@ hooks: {
 - `nuxt-delay-hydration` obsolète → hydratation lazy native Nuxt 4 (hydrate-on-visible, etc.)
 - `experimental.inlineSSRStyles` renommé en `features.inlineStyles`
 - `nuxt-vitalizer` 2.0: DelayHydration component supprimé → macros natives
+- **Pagefind** : Exécuter via script `package.json` plutôt que hook Nitro (plus robuste pour SSG) :
+  ```json
+  "scripts": {
+    "build": "nuxt build && npx pagefind --site .output/public"
+  }
+  ```
 
 ## Validation Strategy
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| **Schema Validator** | Zod 4 ou Valibot v1 | Standard Schema natif; Valibot ~0.5-1.4KB, Zod ~5.36KB, zod/mini ~1.88KB |
-| **Import Source** | `import { z } from 'zod'` ou `'zod/v4'` | ⚠️ `import { z } from '@nuxt/content'` est **déprécié** et sera supprimé |
+| **Schema Validator** | Zod 4 ou Valibot v1 | Standard Schema natif; Valibot ~1KB gzip / ~2KB min, Zod ~5KB gzip / ~10KB min, zod/mini ~2KB gzip / ~5KB min |
+| **Import Source** | `import { z } from 'zod'` ou `import * as z from 'zod/mini'` | ⚠️ `import { z } from '@nuxt/content'` est **déprécié** et sera supprimé |
 | **Validation Scope** | Build time | Erreurs détectées au build via Content 3 collections |
 | **Type Inference** | `z.infer<typeof schema>` | Types TypeScript générés automatiquement |
 | **Sitemap Integration** | `asSitemapCollection()` | Wrapper requis pour @nuxtjs/sitemap v7.5+ avec Content v3 |
@@ -163,7 +169,7 @@ hooks: {
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | **Search Engine** | Pagefind 1.4.0+ | ~100KB total (JS+UI+CSS), core ~8KB + chunks (~40KB/chunk); <300KB pour 10k pages |
-| **Indexation** | Hook `nitro:build:public-assets` | Exécuté après génération des assets publics |
+| **Indexation** | Script `package.json` post-build | Plus robuste que hook Nitro pour SSG |
 | **Loading** | Chunks à la demande | Télécharge uniquement chunks contenant termes recherchés |
 | **UX** | Command palette | Intégré avec shadcn-vue Command component (⌘K) |
 
@@ -186,7 +192,7 @@ const posts = await queryCollection('blog').all()
 
 **Autres changements :**
 - Mode document-driven supprimé - créer les pages manuellement
-- Composants prose personnalisés dans `components/mdc/` (non plus `components/content/`)
+- Composants prose personnalisés dans `components/prose/` (non plus `components/content/`)
 - Répertoire de sortie Pagefind : `pagefind/` (non plus `_pagefind/`)
 
 ## Hydratation Strategy

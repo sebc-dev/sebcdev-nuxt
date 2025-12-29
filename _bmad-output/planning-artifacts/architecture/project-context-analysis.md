@@ -24,19 +24,19 @@
 |-------------|---------|------|
 | **Nuxt** | 4.2.2 | Framework full-stack, SSG mode |
 | **Nuxt Content** | 3.10.0+ | CMS fichiers Markdown/MDC |
-| **Search Engine** | Pagefind 1.4.0+ | Recherche full-text post-build (~8KB + chunks) |
+| **Search Engine** | Pagefind 1.4.0+ | Recherche full-text post-build (~8KB core entry + 36KB API client + chunks) |
 | **TailwindCSS** | 4.1.17 | Styling utility-first via @tailwindcss/vite |
 | **shadcn-vue** | 2.4.3+ | Composants UI accessibles (Reka UI) |
-| **Validation** | Zod 4 | Validation schéma (8-10KB) ou Valibot (0.7-2KB) + Standard Schema |
+| **Validation** | Zod 4 | Validation schéma (~5KB gzip / ~10KB min) ou Valibot (~1KB gzip / ~2KB min) + Standard Schema |
 | **Hébergement** | Cloudflare Pages | Edge deployment, bande passante illimitée, Early Hints +30% LCP |
-| **Runtime** | Node.js 24+ LTS | Active LTS "Krypton" (oct. 2025), support jusqu'en avril 2028 |
+| **Runtime** | Node.js 22 LTS | Active LTS "Jod", version stable Cloudflare Pages |
 | **Package Manager** | pnpm 10+ | Lifecycle scripts désactivés par défaut (.npmrc requis) |
 
 ## Implications Architecturales du Stack
 
 **Nuxt Content 3 + Pagefind :**
 - Génération statique complète (SSG) - pas de server functions pour le contenu
-- Pagefind indexe le HTML post-build (hook `nitro:build:public-assets`)
+- Pagefind indexe le HTML post-build (script `package.json`: `nuxt build && npx pagefind...`)
 - Bundle core ~8KB + index chargé par chunks (~40KB/chunk), <300KB total pour 10k pages
 - Stemming natif français/anglais via détection automatique attribut HTML `lang`
 - Filtrage multi-critères entièrement côté client
@@ -82,7 +82,7 @@
 3. **Accessibility (a11y)** - Reka UI primitives, @axe-core/playwright 4.11+ CI, validation manuelle NVDA/VoiceOver
 4. **SEO/GEO Dual Optimization** - llms.txt (adoption précoce, zéro visite AI crawler vérifié), FAQPage Schema, TechArticle, citations +40% visibilité
 5. **Content Architecture** - MDC parsing, Zod/Valibot validation (⚠️ @zod/mini déprécié), taxonomy (piliers/catégories/tags)
-6. **Client-Side Search** - Pagefind 1.4+ post-build (~8KB + chunks), hook nitro:build:public-assets, stemming FR/EN natif
+6. **Client-Side Search** - Pagefind 1.4+ post-build (~8KB + chunks), script package.json, stemming FR/EN natif
 7. **Design System** - Tailwind 4 @theme tokens oklch, shadcn-vue Reka UI, dark-first
-8. **Build & Runtime** - Node.js 24 LTS, pnpm 10+ (.npmrc pour lifecycle scripts), nitro preset cloudflare_pages
+8. **Build & Runtime** - Node.js 22 LTS, pnpm 10+ (config via package.json ou pnpm-workspace.yaml), nitro preset cloudflare_pages
 9. **Sitemap Integration** - @nuxtjs/sitemap v7.5+ avec `asSitemapCollection()` wrapper pour Content v3

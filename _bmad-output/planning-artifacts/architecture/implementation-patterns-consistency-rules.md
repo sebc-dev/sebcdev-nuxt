@@ -179,7 +179,7 @@ import { TooltipRoot, TooltipTrigger } from 'reka-ui'
 - Pas de wrapper custom pour MVP
 
 **Data Validation:**
-- Validateur: Zod 4 (8-10KB) ou Valibot v1.0 (0.7-2KB tree-shaken)
+- Validateur: Zod 4 (~5KB gzip / ~10KB min) ou Valibot v1.0 (~1KB gzip / ~2KB min tree-shaken)
 - Import direct depuis `zod` (⚠️ `@zod/mini` package **déprécié**, `import { z } from '@nuxt/content'` **à supprimer**)
 - Validation au build time via Content 3 collections
 
@@ -287,8 +287,8 @@ experimental: { inlineSSRStyles: true }  // Utiliser features.inlineStyles
 // ❌ Import depuis radix-vue (rebrandé)
 import { ... } from 'radix-vue'  // Utiliser reka-ui
 
-// ❌ Hook build:done pour Pagefind
-hooks: { 'build:done': ... }  // Utiliser 'nitro:build:public-assets'
+// ❌ Hook Nitro pour Pagefind (timing incertain en SSG)
+hooks: { 'nitro:build:public-assets': ... }  // Utiliser script package.json: "nuxt build && npx pagefind..."
 
 // ❌ Composants Content v2 (supprimés dans v3)
 <ContentDoc />
@@ -305,5 +305,5 @@ const posts = await queryCollection('blog').all()
 public/_pagefind/  // Utiliser pagefind/ (changé depuis v1.0.0)
 
 // ❌ Configuration pnpm dans .npmrc
-pnpm.onlyBuiltDependencies[]=sharp  // Utiliser pnpm-workspace.yaml
+pnpm.onlyBuiltDependencies[]=sharp  // Utiliser package.json (champ pnpm) ou pnpm-workspace.yaml
 ```

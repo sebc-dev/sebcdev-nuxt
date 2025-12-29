@@ -44,18 +44,18 @@ pnpm dlx shadcn-vue@latest init
 
 **Language & Runtime:**
 - TypeScript strict par défaut
-- Node.js 22.16.0 (version stable recommandée par Cloudflare Pages)
-- pnpm 10+ comme package manager (⚠️ lifecycle scripts désactivés par défaut - config via pnpm-workspace.yaml)
+- Node.js 22 LTS "Jod" (version stable recommandée par Cloudflare Pages)
+- pnpm 10+ comme package manager (⚠️ lifecycle scripts désactivés par défaut - config via `package.json` champ `pnpm` ou `pnpm-workspace.yaml`)
 
 **Styling Solution:**
-- TailwindCSS 4.1.17+ via @tailwindcss/vite (⚠️ @nuxtjs/tailwindcss incompatible avec TW4 - v7.0.0-beta.0 en pré-release uniquement)
+- TailwindCSS 4.1.17+ via @tailwindcss/vite (⚠️ @nuxtjs/tailwindcss@6.14.0 supporte TW4, mais @tailwindcss/vite recommandé pour nouveaux projets CSS-first)
 - Configuration CSS-native avec @theme (remplace tailwind.config.js)
 - Tokens sémantiques oklch pour dark-first design
 
 **Build Tooling:**
 - Vite comme bundler (intégré Nuxt)
 - SSG mode pour génération statique
-- Pagefind indexation post-build (hook `nitro:build:public-assets`)
+- Pagefind indexation post-build (script `package.json`: `nuxt build && npx pagefind...`)
 - Cloudflare Pages compatible (preset cloudflare_pages)
 
 **UI Components:**
@@ -66,11 +66,11 @@ pnpm dlx shadcn-vue@latest init
 **Content Management:**
 - Nuxt Content 3.10.0+ avec collections
 - Fichiers MDC dans content/
-- Validation Zod 4 (8-10KB) ou `zod/mini` (3-5KB) + Standard Schema natif
+- Validation Zod 4 (~5KB gzip / ~10KB min) ou `zod/mini` (~2KB gzip / ~5KB min) + Standard Schema natif
 - ⚠️ `@zod/mini` npm package **déprécié** → utiliser `import { z } from 'zod'`
 
 **Search:**
-- Pagefind 1.4.0+ post-build (36KB core vs 500KB+ SQLite WASM)
+- Pagefind 1.4.0+ post-build (~8KB core entry + 36KB API client vs 500KB+ SQLite WASM)
 - Stemming natif FR/EN sans configuration
 - Chunks chargés uniquement pour termes recherchés
 
@@ -139,13 +139,8 @@ export default defineNuxtConfig({
     },
   },
 
-  // Hook Pagefind post-build (après génération des assets publics)
-  hooks: {
-    'nitro:build:public-assets': async () => {
-      const { exec } = await import('child_process')
-      exec('npx pagefind --site .output/public')
-    },
-  },
+  // Pagefind: utiliser script package.json plutôt que hook Nitro (plus robuste pour SSG)
+  // "build": "nuxt build && npx pagefind --site .output/public"
 })
 ```
 
@@ -173,9 +168,18 @@ export default defineNuxtConfig({
 
 ## Configuration pnpm 10
 
+**Option 1 - package.json (Recommandée) :**
+```json
+{
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "sharp", "pagefind"]
+  }
+}
+```
+
+**Option 2 - pnpm-workspace.yaml :**
 ```yaml
 # pnpm-workspace.yaml - Configuration pnpm 10
-# Lifecycle scripts désactivés par défaut pour sécurité
 packages:
   - '.'
 
@@ -185,7 +189,7 @@ onlyBuiltDependencies:
   - pagefind
 ```
 
-**Note importante :** La syntaxe `.npmrc` avec `pnpm.onlyBuiltDependencies[]` est **incorrecte pour pnpm 10**. Utiliser `pnpm-workspace.yaml` à la place.
+**Note importante :** La syntaxe `.npmrc` avec `pnpm.onlyBuiltDependencies[]` est **incorrecte pour pnpm 10**. Utiliser `package.json` (champ `pnpm`) ou `pnpm-workspace.yaml` à la place.
 
 ## Arborescence Projet Nuxt 4
 
@@ -208,7 +212,7 @@ sebc-dev/
 ├── server/                       # API routes (résolu depuis rootDir)
 ├── public/                       # Assets statiques
 ├── nuxt.config.ts
-├── .npmrc                        # Configuration pnpm 10
+├── pnpm-workspace.yaml           # Configuration pnpm 10 (alternative au champ pnpm dans package.json)
 └── package.json
 ```
 
@@ -281,14 +285,14 @@ import { TooltipRoot, TooltipTrigger } from 'reka-ui'
 | shadcn-vue | 2.4.3+ | Utilise Reka UI; ⚠️ path aliases `@/` → `app/` à ajuster |
 | reka-ui | Latest | Rebrand de Radix Vue |
 | @nuxtjs/i18n | 10.2.1+ | Compatible Nuxt 4; experimental `strictSeo` mode |
-| zod | 4.x | 8-10KB gzippé; `zod/mini` (3-5KB) disponible |
+| zod | 4.x | ~5KB gzip / ~10KB min; `zod/mini` (~2KB gzip / ~5KB min) disponible |
 | pagefind | 1.4.0+ | ~8KB core + chunks (~40KB/chunk); <300KB total pour 10k pages |
 | nuxt-vitalizer | 2.0.0+ | DelayHydration component supprimé → macros natives |
 | @axe-core/playwright | 4.11.0+ | Tests a11y standard |
 | @nuxtjs/sitemap | 7.5.0+ | Utiliser `asSitemapCollection()` pour Content v3 |
 | nuxt-llms | latest | Génération automatique /llms.txt avec @nuxt/content ^3.2.0 |
-| pnpm | 10.26.2+ | Lifecycle scripts désactivés par défaut (config via pnpm-workspace.yaml) |
-| node | 22.16.0 | Version stable Cloudflare Pages (Node 24 LTS non recommandé pour CF) |
+| pnpm | 10.26.2+ | Lifecycle scripts désactivés par défaut (config via package.json ou pnpm-workspace.yaml) |
+| node | 22 LTS | Version stable Cloudflare Pages (Node 24 non recommandé pour CF) |
 
 ## Alternatives à Considérer
 
@@ -298,11 +302,11 @@ import { TooltipRoot, TooltipTrigger } from 'reka-ui'
 
 **Validation (Standard Schema compatible)** :
 
-| Library | Taille gzippée | Tree-shaking | Meilleur pour |
-|---------|----------------|--------------|---------------|
-| **Valibot v1.0** | 0.7-2KB | Excellent | Client-side, builds minimaux |
-| Zod 4 (`zod/mini`) | 3-5KB | Bon | Équilibre taille/écosystème |
-| Zod 4 (complet) | 8-10KB | Modéré | Schémas complexes, inférence TS |
+| Library | Taille (gzip / min) | Tree-shaking | Meilleur pour |
+|---------|---------------------|--------------|---------------|
+| **Valibot v1.0** | ~1KB / ~2KB | Excellent | Client-side, builds minimaux |
+| Zod 4 (`zod/mini`) | ~2KB / ~5KB | Bon | Équilibre taille/écosystème |
+| Zod 4 (complet) | ~5KB / ~10KB | Modéré | Schémas complexes, inférence TS |
 
 **SEO All-in-One** :
 - `@nuxtjs/seo` : Bundle sitemap, robots, schema.org, OG images, link checking
@@ -321,9 +325,9 @@ import { TooltipRoot, TooltipTrigger } from 'reka-ui'
 
 4. **Reka UI est le nouveau standard** : Rebrand de Radix Vue (février 2025). shadcn-vue utilise Reka UI par défaut.
 
-5. **Node.js 22.16.0 recommandé** : Version stable pour Cloudflare Pages. Node 24 LTS existe mais non recommandé pour CF.
+5. **Node.js 22 LTS recommandé** : Version stable pour Cloudflare Pages. Node 24 existe mais non recommandé pour CF (support souvent en retard).
 
-6. **pnpm 10 sécurité** : Lifecycle scripts désactivés par défaut. Configuration `pnpm-workspace.yaml` requise (pas `.npmrc`).
+6. **pnpm 10 sécurité** : Lifecycle scripts désactivés par défaut. Configuration via `package.json` (champ `pnpm`) ou `pnpm-workspace.yaml` (pas `.npmrc`).
 
 7. **llms.txt** : Module `nuxt-llms` génère automatiquement `/llms.txt` avec @nuxt/content ^3.2.0. Remplace le server route personnalisé.
 
@@ -332,7 +336,7 @@ import { TooltipRoot, TooltipTrigger } from 'reka-ui'
    - ✅ Utiliser `<ContentRenderer>` pour tout le rendu
    - ❌ `queryContent()` (v2) → ✅ `queryCollection()` (v3)
    - Mode document-driven supprimé - créer les pages manuellement
-   - Composants prose personnalisés dans `components/mdc/`
+   - Composants prose personnalisés dans `components/prose/`
 
 9. **Reading time** : 200 wpm standard, considérer 180 wpm pour contenu technique avec code.
 
