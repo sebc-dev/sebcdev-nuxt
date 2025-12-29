@@ -1,0 +1,13 @@
+# pnpm-workspace.yaml - Configuration pnpm 10
+# Lifecycle scripts désactivés par défaut pour sécurité
+# Cette configuration autorise explicitement les scripts pour les packages requis
+
+packages:
+  - '.'
+
+# Packages autorisés à exécuter leurs lifecycle scripts (postinstall, etc.)
+# pnpm 10 bloque tous les scripts par défaut pour des raisons de sécurité
+onlyBuiltDependencies:
+  - esbuild    # Bundler - nécessite compilation native
+  - sharp      # Traitement d'images - bindings natifs
+  - pagefind   # Recherche - génère des index au build
