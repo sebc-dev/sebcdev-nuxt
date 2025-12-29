@@ -84,6 +84,7 @@ date: '2025-12-29'
 | Nuxt 4 + Content 3 | Stack moderne, SSG, client-side search |
 | TailwindCSS 4 | CSS-first config, design tokens via variables |
 | shadcn-vue | Composants accessibles, copy-paste ownership |
+| Zod v4 | Validation schéma Content 3, Standard Schema |
 | Cloudflare Pages | Edge deployment, pas de server compute |
 | Mode sombre unique | Palette dark fixe, pas de theme switching |
 | Bilingue natif | i18n intégré, contenu FR/EN dans Content |
@@ -112,13 +113,16 @@ Full-stack Content Platform (Nuxt 4 SSG) - génération statique complète pour 
 
 ```bash
 # Créer projet Nuxt 4
-pnpm dlx nuxi@latest init sebc-dev -t v4-compat
+pnpm dlx nuxi@latest init sebc-dev
 cd sebc-dev && pnpm install
 
 # Modules essentiels
 pnpm add @nuxt/content
 pnpm add -D @tailwindcss/vite tailwindcss shadcn-nuxt
 pnpm dlx nuxi@latest module add i18n
+
+# Validation de schéma
+pnpm add zod
 
 # Initialiser shadcn-vue
 pnpm dlx shadcn-vue@latest init
@@ -128,7 +132,7 @@ pnpm dlx shadcn-vue@latest init
 
 **Language & Runtime:**
 - TypeScript strict par défaut
-- Node.js 20+ LTS
+- Node.js 22+ LTS (ou 24+ pour nouvelles installations)
 - pnpm comme package manager
 
 **Styling Solution:**
@@ -287,7 +291,7 @@ app/components/
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | **llms.txt** | Auto-generated at build | Always current, zero maintenance |
-| **Schema Markup** | @unhead/schema-org | Type-safe, TechArticle + FAQ support |
+| **Schema Markup** | nuxt-schema-org | Type-safe, TechArticle + FAQ support, Content 3 integration |
 | **Sitemap** | @nuxtjs/sitemap | Official module, hreflang support |
 | **RSS** | Server route generation | Native Content 3 integration |
 
@@ -315,10 +319,19 @@ modules: [
   '@nuxtjs/i18n',
   '@nuxt/image',
   '@nuxtjs/sitemap',
-  '@unhead/schema-org',
+  'nuxt-schema-org',
   'shadcn-nuxt',
 ]
 ```
+
+### Validation Strategy
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **Schema Validator** | Zod v4 | Standard Schema, JSON Schema natif sans dépendance extra |
+| **Import Source** | `import { z } from 'zod'` | Re-export `@nuxt/content` déprécié, sera supprimé |
+| **Validation Scope** | Build time | Erreurs détectées au build, pas en production |
+| **Type Inference** | `z.infer<typeof schema>` | Types TypeScript générés automatiquement |
 
 ## Implementation Patterns & Consistency Rules
 
@@ -469,11 +482,15 @@ export interface ArticleCardProps {
 - Pas de wrapper custom pour MVP
 
 **Data Validation:**
-- Content 3 `defineCollection` schema
-- Validation au build time
+- Validateur: Zod v4 (Standard Schema compatible)
+- Import direct depuis `zod` (re-export `@nuxt/content` déprécié)
+- Validation au build time via Content 3 collections
 
 ```typescript
 // content.config.ts
+import { defineCollection, defineContentConfig } from '@nuxt/content'
+import { z } from 'zod'  // ✅ Import direct - ne pas utiliser @nuxt/content
+
 export default defineContentConfig({
   collections: {
     articles: defineCollection({
@@ -481,10 +498,49 @@ export default defineContentConfig({
       source: '**/*.md',
       schema: z.object({
         title: z.string(),
+        description: z.string(),
+        slug: z.string(),
         pillar: z.enum(['ai', 'engineering', 'ux']),
-        // ...
+        category: z.enum(['news', 'tutorial', 'deep-dive', 'case-study', 'retrospective']),
+        level: z.enum(['all', 'beginner', 'intermediate', 'advanced']),
+        tags: z.array(z.string()),
+        publishedAt: z.coerce.date(),
+        updatedAt: z.coerce.date().optional(),
+        image: z.string().optional(),
+        draft: z.boolean().default(false),
       })
     })
+  }
+})
+```
+
+**Intégration Schema.org avec Content 3:**
+```typescript
+// content.config.ts
+import { defineCollection, defineContentConfig } from '@nuxt/content'
+import { asSchemaOrgCollection } from 'nuxt-schema-org/content'
+import { z } from 'zod'
+
+export default defineContentConfig({
+  collections: {
+    articles: defineCollection(
+      asSchemaOrgCollection({
+        type: 'page',
+        source: '**/*.md',
+        schema: z.object({
+          title: z.string(),
+          description: z.string(),
+          pillar: z.enum(['ai', 'engineering', 'ux']),
+          category: z.enum(['news', 'tutorial', 'deep-dive', 'case-study', 'retrospective']),
+          level: z.enum(['all', 'beginner', 'intermediate', 'advanced']),
+          tags: z.array(z.string()),
+          publishedAt: z.date(),
+          updatedAt: z.date().optional(),
+          image: z.string().optional(),
+          draft: z.boolean().default(false),
+        })
+      })
+    )
   }
 })
 ```
@@ -500,7 +556,6 @@ export default defineContentConfig({
 5. Valider le contenu via Content 3 schema
 
 **Anti-Patterns à Éviter:**
-
 ```typescript
 // ❌ snake_case dans JSON
 { published_at: "2025-01-15" }
@@ -513,6 +568,9 @@ import { format } from 'date-fns'
 
 // ❌ Events en camelCase
 emit('articleSelected')
+
+// ❌ Import zod depuis @nuxt/content (déprécié)
+import { z } from '@nuxt/content'
 ```
 
 ## Project Structure & Boundaries
