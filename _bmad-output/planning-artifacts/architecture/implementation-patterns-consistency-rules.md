@@ -132,6 +132,38 @@ export interface ArticleCardProps {
 - UI: `<Skeleton />` de shadcn-vue
 - Pattern: destructure depuis `useAsyncData`
 
+**Hydratation Lazy (Nuxt 4 natif):**
+```vue
+<template>
+  <!-- Hydrate quand visible dans le viewport -->
+  <LazyTableOfContents hydrate-on-visible />
+
+  <!-- Hydrate pendant l'idle time du navigateur -->
+  <LazySearchCommand hydrate-on-idle />
+
+  <!-- Hydrate sur interaction (hover, click, focus) -->
+  <LazyArticleComments hydrate-on-interaction />
+
+  <!-- Hydrate après un délai fixe -->
+  <LazyNewsletterForm :hydrate-after="2000" />
+</template>
+```
+
+**Migration Reka UI (depuis Radix Vue):**
+```typescript
+// ❌ Ancien import (legacy, ne plus utiliser)
+import { TooltipRoot, TooltipTrigger } from 'radix-vue'
+
+// ✅ Nouveau import (recommandé depuis février 2025)
+import { TooltipRoot, TooltipTrigger } from 'reka-ui'
+```
+
+```css
+/* Variables CSS également renommées */
+/* ❌ Ancien */ .element { color: var(--radix-tooltip-trigger-color); }
+/* ✅ Nouveau */ .element { color: var(--reka-tooltip-trigger-color); }
+```
+
 ## Process Patterns
 
 **Error Handling Hierarchy:**
@@ -147,64 +179,70 @@ export interface ArticleCardProps {
 - Pas de wrapper custom pour MVP
 
 **Data Validation:**
-- Validateur: Zod v4 (Standard Schema compatible)
-- Import direct depuis `zod` (re-export `@nuxt/content` déprécié)
+- Validateur: Zod 4 (8-10KB) ou Valibot v1.0 (0.7-2KB tree-shaken)
+- Import direct depuis `zod` (⚠️ `@zod/mini` package **déprécié**, `import { z } from '@nuxt/content'` **à supprimer**)
 - Validation au build time via Content 3 collections
 
 ```typescript
 // content.config.ts
 import { defineCollection, defineContentConfig } from '@nuxt/content'
-import { z } from 'zod'  // ✅ Import direct - ne pas utiliser @nuxt/content
-
-export default defineContentConfig({
-  collections: {
-    articles: defineCollection({
-      type: 'page',
-      source: '**/*.md',
-      schema: z.object({
-        title: z.string(),
-        description: z.string(),
-        slug: z.string(),
-        pillar: z.enum(['ai', 'engineering', 'ux']),
-        category: z.enum(['news', 'tutorial', 'deep-dive', 'case-study', 'retrospective']),
-        level: z.enum(['all', 'beginner', 'intermediate', 'advanced']),
-        tags: z.array(z.string()),
-        publishedAt: z.coerce.date(),
-        updatedAt: z.coerce.date().optional(),
-        image: z.string().optional(),
-        draft: z.boolean().default(false),
-      })
-    })
-  }
-})
-```
-
-**Intégration Schema.org avec Content 3:**
-```typescript
-// content.config.ts
-import { defineCollection, defineContentConfig } from '@nuxt/content'
-import { asSchemaOrgCollection } from 'nuxt-schema-org/content'
-import { z } from 'zod'
+import { asSitemapCollection } from '@nuxtjs/sitemap/content'
+import { z } from 'zod'  // ✅ Import direct depuis zod (pas @nuxt/content)
 
 export default defineContentConfig({
   collections: {
     articles: defineCollection(
-      asSchemaOrgCollection({
+      asSitemapCollection({  // ✅ Intégration sitemap Content v3
         type: 'page',
         source: '**/*.md',
         schema: z.object({
           title: z.string(),
           description: z.string(),
+          slug: z.string(),
           pillar: z.enum(['ai', 'engineering', 'ux']),
           category: z.enum(['news', 'tutorial', 'deep-dive', 'case-study', 'retrospective']),
           level: z.enum(['all', 'beginner', 'intermediate', 'advanced']),
           tags: z.array(z.string()),
-          publishedAt: z.date(),
-          updatedAt: z.date().optional(),
+          publishedAt: z.coerce.date(),
+          updatedAt: z.coerce.date().optional(),
           image: z.string().optional(),
           draft: z.boolean().default(false),
         })
       })
+    )
+  }
+})
+```
+
+**Intégration Schema.org + Sitemap avec Content 3:**
+```typescript
+// content.config.ts - Configuration complète
+import { defineCollection, defineContentConfig } from '@nuxt/content'
+import { asSchemaOrgCollection } from 'nuxt-schema-org/content'
+import { asSitemapCollection } from '@nuxtjs/sitemap/content'
+import { z } from 'zod'  // ✅ Import direct
+
+export default defineContentConfig({
+  collections: {
+    articles: defineCollection(
+      asSitemapCollection(  // Ordre: sitemap wraps schemaOrg
+        asSchemaOrgCollection({
+          type: 'page',
+          source: '**/*.md',
+          schema: z.object({
+            title: z.string(),
+            description: z.string(),
+            pillar: z.enum(['ai', 'engineering', 'ux']),
+            category: z.enum(['news', 'tutorial', 'deep-dive', 'case-study', 'retrospective']),
+            level: z.enum(['all', 'beginner', 'intermediate', 'advanced']),
+            tags: z.array(z.string()),
+            publishedAt: z.date(),
+            updatedAt: z.date().optional(),
+            image: z.string().optional(),
+            draft: z.boolean().default(false),
+          })
+        })
+      )
     )
   }
 })
@@ -234,6 +272,38 @@ import { format } from 'date-fns'
 // ❌ Events en camelCase
 emit('articleSelected')
 
-// ❌ Import zod depuis @nuxt/content (déprécié)
+// ❌ Package @zod/mini (déprécié)
+import { z } from '@zod/mini'  // Utiliser 'zod' ou 'zod/mini' (import path)
+
+// ❌ Import zod depuis @nuxt/content (sera supprimé)
 import { z } from '@nuxt/content'
+
+// ❌ nuxt-delay-hydration (obsolète depuis Nuxt 3.16+)
+modules: ['nuxt-delay-hydration']
+
+// ❌ experimental.inlineSSRStyles (renommé)
+experimental: { inlineSSRStyles: true }  // Utiliser features.inlineStyles
+
+// ❌ Import depuis radix-vue (rebrandé)
+import { ... } from 'radix-vue'  // Utiliser reka-ui
+
+// ❌ Hook build:done pour Pagefind
+hooks: { 'build:done': ... }  // Utiliser 'nitro:build:public-assets'
+
+// ❌ Composants Content v2 (supprimés dans v3)
+<ContentDoc />
+<ContentList />
+<ContentQuery />
+// ✅ Utiliser <ContentRenderer> + queryCollection()
+
+// ❌ queryContent() (Content v2)
+const posts = await queryContent('blog').find()
+// ✅ queryCollection() (Content v3)
+const posts = await queryCollection('blog').all()
+
+// ❌ Répertoire Pagefind ancien
+public/_pagefind/  // Utiliser pagefind/ (changé depuis v1.0.0)
+
+// ❌ Configuration pnpm dans .npmrc
+pnpm.onlyBuiltDependencies[]=sharp  // Utiliser pnpm-workspace.yaml
 ```

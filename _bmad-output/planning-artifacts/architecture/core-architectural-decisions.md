@@ -65,23 +65,40 @@ app/components/
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| **llms.txt** | Auto-generated at build | Always current, zero maintenance |
-| **Schema Markup** | nuxt-schema-org | Type-safe, TechArticle + FAQ support, Content 3 integration |
-| **Sitemap** | @nuxtjs/sitemap | Official module, hreflang support |
+| **llms.txt** | Module nuxt-llms (auto) | Navigation IA efficace, génération automatique avec @nuxt/content ^3.2.0 |
+| **Schema Markup** | nuxt-schema-org | TechArticle + FAQPage + BreadcrumbList, Content 3 intégré |
+| **Sitemap** | @nuxtjs/sitemap | Official module, hreflang auto |
 | **RSS** | Server route generation | Native Content 3 integration |
+| **i18n SEO** | useLocaleHead() | Injection auto hreflang avec `language` obligatoire |
+
+**Optimisations GEO (Princeton/Georgia Tech):**
+- Citations d'experts : +40% visibilité
+- Statistiques incluses : +35-40%
+- Sources citées : +30-40%
+- Sections FAQ : potentiel citation IA élevé
 
 ## Infrastructure & Deployment
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| **Image Optimization** | @nuxt/image + Cloudflare provider | Auto WebP, lazy loading, CDN |
+| **Image Optimization** | @nuxt/image v2 + Cloudflare | AVIF/WebP auto, Early Hints LCP +30% |
 | **CI/CD** | Cloudflare Pages direct | Zero config, preview branches, fast |
 | **Environment Config** | .env + runtimeConfig + CF fallback | Local dev + prod parity |
+| **Tests a11y** | @axe-core/playwright CI | Couverture WCAG shadcn-vue incomplète |
+
+**Cloudflare Pages Avantages (budget 0€):**
+
+| Avantage | Valeur |
+|----------|--------|
+| Bande passante | **Illimitée** (vs 100GB Netlify/Vercel) |
+| Builds/mois | 500 |
+| Réseau edge | 330+ datacenters, 95% population <50ms |
+| HTTP/3 + Early Hints | Activés automatiquement |
 
 **Deployment Flow:**
 
 ```
-Git Push → Cloudflare Pages Build → SSG Output → Edge Deployment
+Git Push → Cloudflare Pages Build → SSG + Pagefind → Edge Deployment
                 ↓
          Preview URL (branches)
 ```
@@ -89,21 +106,94 @@ Git Push → Cloudflare Pages Build → SSG Output → Edge Deployment
 ## Modules Nuxt Finaux
 
 ```typescript
+// ORDRE CRITIQUE: modules SEO AVANT @nuxt/content
 modules: [
-  '@nuxt/content',
-  '@nuxtjs/i18n',
   '@nuxt/image',
-  '@nuxtjs/sitemap',
-  'nuxt-schema-org',
+  '@nuxtjs/i18n',
+  '@nuxtjs/sitemap',     // SEO - avant @nuxt/content
+  'nuxt-schema-org',     // SEO - avant @nuxt/content
+  '@nuxt/content',       // ← APRÈS les modules SEO
+  'nuxt-llms',           // Génération automatique /llms.txt
+  'nuxt-vitalizer',      // Optimisation LCP
   'shadcn-nuxt',
 ]
+
+// Performance (remplace experimental.inlineSSRStyles)
+features: {
+  inlineStyles: true,   // CLS 0.77 → 0.00
+}
+
+// Cloudflare Pages SSG
+nitro: {
+  preset: 'cloudflare_pages',
+  autoSubfolderIndex: false,
+  prerender: {
+    routes: ['/rss.xml'],  // Pre-render RSS feed
+  },
+}
+
+// Pagefind post-build (après génération des assets publics)
+hooks: {
+  'nitro:build:public-assets': async () => {
+    const { exec } = await import('child_process')
+    exec('npx pagefind --site .output/public')
+  },
+}
 ```
+
+**Notes importantes:**
+- `@nuxtjs/tailwindcss@6.14.0` supporte TW4, mais `@tailwindcss/vite` recommandé pour nouveaux projets
+- `nuxt-delay-hydration` obsolète → hydratation lazy native Nuxt 4 (hydrate-on-visible, etc.)
+- `experimental.inlineSSRStyles` renommé en `features.inlineStyles`
+- `nuxt-vitalizer` 2.0: DelayHydration component supprimé → macros natives
 
 ## Validation Strategy
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| **Schema Validator** | Zod v4 | Standard Schema, JSON Schema natif sans dépendance extra |
-| **Import Source** | `import { z } from 'zod'` | Re-export `@nuxt/content` déprécié, sera supprimé |
-| **Validation Scope** | Build time | Erreurs détectées au build, pas en production |
+| **Schema Validator** | Zod 4 ou Valibot v1 | Standard Schema natif; Valibot ~0.5-1.4KB, Zod ~5.36KB, zod/mini ~1.88KB |
+| **Import Source** | `import { z } from 'zod'` ou `'zod/v4'` | ⚠️ `import { z } from '@nuxt/content'` est **déprécié** et sera supprimé |
+| **Validation Scope** | Build time | Erreurs détectées au build via Content 3 collections |
 | **Type Inference** | `z.infer<typeof schema>` | Types TypeScript générés automatiquement |
+| **Sitemap Integration** | `asSitemapCollection()` | Wrapper requis pour @nuxtjs/sitemap v7.5+ avec Content v3 |
+| **SEO Unified** | `asSeoCollection()` (optionnel) | Combine sitemap + schema.org + OG Image + Robots via `@nuxtjs/seo/content` |
+
+## Search Strategy
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **Search Engine** | Pagefind 1.4.0+ | ~100KB total (JS+UI+CSS), core ~8KB + chunks (~40KB/chunk); <300KB pour 10k pages |
+| **Indexation** | Hook `nitro:build:public-assets` | Exécuté après génération des assets publics |
+| **Loading** | Chunks à la demande | Télécharge uniquement chunks contenant termes recherchés |
+| **UX** | Command palette | Intégré avec shadcn-vue Command component (⌘K) |
+
+## @nuxt/content v3 API Changes
+
+**Composants supprimés (migration v2 → v3) :**
+- ❌ `<ContentDoc />` - supprimé
+- ❌ `<ContentList />` - supprimé
+- ❌ `<ContentQuery />` - supprimé
+- ✅ Utiliser `<ContentRenderer>` pour tout le rendu
+
+**API de requête :**
+```typescript
+// ❌ ANCIEN (Content v2)
+const posts = await queryContent('blog').find()
+
+// ✅ NOUVEAU (Content v3)
+const posts = await queryCollection('blog').all()
+```
+
+**Autres changements :**
+- Mode document-driven supprimé - créer les pages manuellement
+- Composants prose personnalisés dans `components/mdc/` (non plus `components/content/`)
+- Répertoire de sortie Pagefind : `pagefind/` (non plus `_pagefind/`)
+
+## Hydratation Strategy
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **Méthode** | Hydratation lazy native Nuxt 4 | Remplace nuxt-delay-hydration (obsolète) |
+| **Composants lourds** | `hydrate-on-visible` | Hydrate quand visible dans viewport |
+| **Composants interactifs** | `hydrate-on-interaction` | Hydrate sur hover/click/focus |
+| **Composants différés** | `hydrate-on-idle` | Hydrate pendant idle time navigateur |
