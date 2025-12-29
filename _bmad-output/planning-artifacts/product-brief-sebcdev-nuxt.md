@@ -203,9 +203,9 @@ Trafic venant de Perplexity, ChatGPT, Gemini = preuve que contenu considéré co
 - Temps de lecture par section pour audit rapide
 
 **Standards Techniques Non-Négociables**
-- Mode sombre (@nuxtjs/color-mode) — standard attendu par développeurs
+- Mode sombre fixe uniquement (pas de toggle clair/sombre) — standard attendu par développeurs
 - SEO complet : useSeoMeta, sitemap, structured data, hreflang bilingue
-- Performance Lighthouse > 90 tous scores (SSR Nuxt + @nuxt/image)
+- Performance Lighthouse : cible 100/100/100/100 (Performance, Accessibility, Best Practices, SEO)
 - Responsive : expérience parfaite mobile/desktop
 - Admin fonctionnel : Nuxt Content pour publication facile
 
@@ -223,10 +223,10 @@ Trafic venant de Perplexity, ChatGPT, Gemini = preuve que contenu considéré co
   - 1 article UX (ex: "Design System accessible avec Tailwind")
 - Testés par 2-3 early readers avant publication
 
-**Newsletter (Basique)**
-- Formulaire embed simple (Buttondown/Mailchimp iframe)
-- Objectif : 50 abonnés minimum au M6 (taux conversion ~2%)
-- Automation avancée reportée à v2.0
+**Newsletter (Post-MVP)**
+- Reportée après validation MVP
+- Première itération prévue post-M6
+- Objectifs d'abonnés définis lors de cette phase
 
 ---
 
@@ -265,7 +265,7 @@ Trafic venant de Perplexity, ChatGPT, Gemini = preuve que contenu considéré co
 | Métrique | Seuil Validation |
 |----------|------------------|
 | **Visiteurs Uniques** | 500+ UV/mois au M6 |
-| **Articles publiés** | 15-18 articles équilibrés (6-7 IA, 5 Ingénierie, 4-5 UX) |
+| **Articles publiés** | 17 articles équilibrés (6 IA, 5 Ingénierie, 4 UX, 3 Cross-piliers) |
 | **Équilibre piliers** | Chaque pilier 25-45% du trafic (pas de monopole) |
 | **Temps lecture moyen** | > 3 minutes |
 | **Scroll depth moyen** | > 60% |
@@ -300,3 +300,17 @@ Maintien permanent de la transparence sur explorations en cours (frontières tec
 - M24 : Communauté Discord payante (3 expertises = valeur unique, 5€/mois)
 
 **Reconnaissance par pilier** : Contributeur référencé écosystème Nuxt/AI, articles republiés par UX Collective/Smashing Magazine, référence pour "UX pour développeurs" et design systems accessibles.
+
+---
+
+## Contraintes Projet
+
+| Contrainte | Valeur |
+|------------|--------|
+| **Budget outils** | 0€ (services gratuits ou open-source) |
+| **Temps disponible** | 27h30/semaine max |
+| **Contributeur** | Solo dev |
+| **Date butoir Phase 0** | Fin Février 2025 |
+| **Approche contenu** | FR-first, EN second |
+
+> **Note** : Le PRD (prd.md) est la source de vérité pour les spécifications détaillées.
