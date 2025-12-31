@@ -36,26 +36,28 @@ workflow_status:
     name: "Planning"
     workflows:
       - id: "prd"
-        status: "required"
+        status: "_bmad-output/planning-artifacts/prd/index.md"
         agent: "pm"
         command: "/bmad:bmm:workflows:create-prd"
-        output: "Product Requirements Document with FRs and NFRs"
+        completed: "2025-12-31"
+        note: "PRD complet avec 14 sections shardées"
 
       - id: "create-ux-design"
-        status: "conditional"
+        status: "_bmad-output/planning-artifacts/ux-design-specification.md"
         agent: "ux-designer"
         command: "/bmad:bmm:workflows:create-ux-design"
-        note: "Déterminé après PRD - décision utilisateur/agent si nécessaire"
+        completed: "2025-12-31"
+        note: "Spécification UX complète - Design System, User Journeys, Visual Foundation"
 
   - phase: 2
     name: "Solutioning"
     workflows:
       - id: "create-architecture"
-        status: "required"
+        status: "_bmad-output/planning-artifacts/architecture/index.md"
         agent: "architect"
         command: "/bmad:bmm:workflows:create-architecture"
-        output: "System architecture document"
-        note: "Conception système complète pour projet greenfield"
+        completed: "2025-12-31"
+        note: "Architecture complète avec patterns d'implémentation (244 fichiers)"
 
       - id: "create-epics-and-stories"
         status: "required"

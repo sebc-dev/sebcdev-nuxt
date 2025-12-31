@@ -142,3 +142,187 @@ watch(activeTab, (val) => {
 ```
 
 **Avantage :** Le choix du package manager est mémorisé entre les pages et sessions.
+
+## Copy Button avec Feedback — UX Spec Required
+
+Le bouton de copie est un élément UX critique pour le persona Lucas (Time-to-value < 60s).
+
+### Requirements UX
+
+| Exigence | Spécification |
+|----------|---------------|
+| **Visibilité** | Toujours visible (pas hover-only) |
+| **Position** | Coin supérieur droit du code block |
+| **Feedback** | Icône → checkmark + texte "Copié!" pendant 2s |
+| **Accessibilité** | `aria-label`, focus visible, keyboard accessible |
+
+### Implémentation ProsePre avec Copy Button
+
+```vue
+<!-- app/components/content/ProsePre.vue -->
+<script setup lang="ts">
+import { Check, Copy } from 'lucide-vue-next'
+import { Button } from '@/components/ui/button'
+
+const props = defineProps<{
+  code: string
+  language?: string
+  filename?: string
+  highlights?: number[]
+}>()
+
+const copied = ref(false)
+let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+async function copyToClipboard() {
+  try {
+    await navigator.clipboard.writeText(props.code)
+    copied.value = true
+
+    // Reset après 2 secondes (UX Spec)
+    if (timeoutId) clearTimeout(timeoutId)
+    timeoutId = setTimeout(() => {
+      copied.value = false
+    }, 2000)
+  } catch (err) {
+    console.error('Failed to copy:', err)
+  }
+}
+
+onUnmounted(() => {
+  if (timeoutId) clearTimeout(timeoutId)
+})
+</script>
+
+<template>
+  <div class="group relative">
+    <!-- Language badge (coin supérieur gauche) -->
+    <span
+      v-if="language"
+      class="absolute left-3 top-2 text-xs text-foreground-muted font-mono"
+    >
+      {{ language }}
+    </span>
+
+    <!-- Filename si présent -->
+    <div
+      v-if="filename"
+      class="flex items-center gap-2 border-b border-border px-4 py-2 text-sm text-foreground-muted"
+    >
+      {{ filename }}
+    </div>
+
+    <!-- Copy button (toujours visible - UX Spec) -->
+    <Button
+      variant="ghost"
+      size="icon"
+      class="absolute right-2 top-2 h-8 w-8"
+      :aria-label="copied ? 'Copié!' : 'Copier le code'"
+      @click="copyToClipboard"
+    >
+      <Transition name="fade" mode="out-in">
+        <Check
+          v-if="copied"
+          class="h-4 w-4 text-success"
+          aria-hidden="true"
+        />
+        <Copy
+          v-else
+          class="h-4 w-4"
+          aria-hidden="true"
+        />
+      </Transition>
+
+      <!-- Feedback texte "Copié!" -->
+      <Transition name="slide-fade">
+        <span
+          v-if="copied"
+          class="absolute -left-12 text-xs text-success font-medium"
+        >
+          Copié!
+        </span>
+      </Transition>
+    </Button>
+
+    <!-- Code content -->
+    <pre
+      class="overflow-x-auto rounded-lg bg-background-secondary p-4 pt-8"
+      :class="{ 'pt-12': filename }"
+    ><slot /></pre>
+  </div>
+</template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 150ms ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-fade-enter-active {
+  transition: all 200ms ease-out;
+}
+.slide-fade-leave-active {
+  transition: all 150ms ease-in;
+}
+.slide-fade-enter-from {
+  opacity: 0;
+  transform: translateX(10px);
+}
+.slide-fade-leave-to {
+  opacity: 0;
+}
+</style>
+```
+
+### Points critiques
+
+1. **Toujours visible** : Pas de `opacity-0 group-hover:opacity-100` — accessibilité + mobile
+2. **Feedback 2 secondes** : Durée spécifiée dans l'UX Spec
+3. **Icône Check** : Confirmation visuelle immédiate avec couleur `--success`
+4. **Texte "Copié!"** : Feedback textuel pour renforcer l'action
+5. **Cleanup timeout** : Évite les memory leaks avec `onUnmounted`
+
+### Composable réutilisable (optionnel)
+
+```typescript
+// composables/useCopyToClipboard.ts
+export function useCopyToClipboard(duration = 2000) {
+  const copied = ref(false)
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+  async function copy(text: string) {
+    try {
+      await navigator.clipboard.writeText(text)
+      copied.value = true
+
+      if (timeoutId) clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        copied.value = false
+      }, duration)
+
+      return true
+    } catch (err) {
+      console.error('Copy failed:', err)
+      return false
+    }
+  }
+
+  onUnmounted(() => {
+    if (timeoutId) clearTimeout(timeoutId)
+  })
+
+  return { copied, copy }
+}
+```
+
+**Usage :**
+
+```vue
+<script setup>
+const { copied, copy } = useCopyToClipboard()
+</script>
+```
