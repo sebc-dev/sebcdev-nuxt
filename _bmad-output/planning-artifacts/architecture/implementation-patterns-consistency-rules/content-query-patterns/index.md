@@ -1,0 +1,25 @@
+# Content Query Patterns
+
+## Table of Contents
+
+- [Configuration source avec prefix pour coordination i18n](./configuration-source-avec-prefix-pour-coordination-i18n.md)
+- [Content Validation & Testing](./content-validation-testing.md)
+- [Contrainte fondamentale : un document = une collection](./contrainte-fondamentale-un-document-une-collection.md)
+- [Mapping collections ↔ routes](./mapping-collections-routes.md)
+- [Pattern 1 : Requête avec locale dynamique typée](./pattern-1-requete-avec-locale-dynamique-typee.md)
+- [Pattern 10 : Fallback locale avec message explicite](./pattern-10-fallback-locale-avec-message-explicite.md)
+- [Pattern 11 : Opérateurs SQL dans `.where()`](./pattern-11-operateurs-sql-dans-where.md)
+- [Pattern 12 : Conditions complexes `.andWhere()` / `.orWhere()`](./pattern-12-conditions-complexes-andwhere-orwhere.md)
+- [Pattern 13 : Caveat `.order()` - Tri alphabétique](./pattern-13-caveat-order-tri-alphabetique.md)
+- [Pattern 14 : Pagination SSG complète](./pattern-14-pagination-ssg-complete.md)
+- [Pattern 15 : `.select()` pour optimisation des listes](./pattern-15-select-pour-optimisation-des-listes.md)
+- [Pattern 16 : Anti-patterns à éviter](./pattern-16-anti-patterns-a-eviter.md)
+- [Pattern 2 : Re-fetch automatique au changement de langue](./pattern-2-re-fetch-automatique-au-changement-de-langue.md)
+- [Pattern 3 : Fallback vers locale par défaut](./pattern-3-fallback-vers-locale-par-defaut.md)
+- [Pattern 4 : Composable réutilisable complet](./pattern-4-composable-reutilisable-complet.md)
+- [Pattern 5 : Helper pour nom de collection](./pattern-5-helper-pour-nom-de-collection.md)
+- [Pattern 6 : Property Editors pour Nuxt Studio](./pattern-6-property-editors-pour-nuxt-studio.md)
+- [Pattern 7 : Validation cross-champs avec .refine()](./pattern-7-validation-cross-champs-avec-refine.md)
+- [Pattern 8 : Fallback component pour erreurs de validation](./pattern-8-fallback-component-pour-erreurs-de-validation.md)
+- [Pattern 9 : Lier les versions traduites (Language Switcher)](./pattern-9-lier-les-versions-traduites-language-switcher.md)
+- [Résumé des patterns](./resume-des-patterns.md)

@@ -1,0 +1,25 @@
+# Core Architectural Decisions
+
+## Table of Contents
+
+- [APIs Utilitaires @nuxt/content v3.10+](./apis-utilitaires-nuxt-content-v310.md)
+- [Architecture Dump/Restore D1](./architecture-dumprestore-d1.md)
+- [Breaking Changes Nuxt 3 → Nuxt 4](./breaking-changes-nuxt-3-nuxt-4.md)
+- [Breaking Changes @nuxtjs/i18n v9 → v10](./breaking-changes-nuxtjsi18n-v9-v10.md)
+- [Code Highlighting (Shiki)](./code-highlighting-shiki.md)
+- [Content Architecture](./content-architecture.md)
+- [Decision Priority Analysis](./decision-priority-analysis.md)
+- [Frontend Architecture](./frontend-architecture.md)
+- [Hydratation Strategy](./hydratation-strategy.md)
+- [Indexes D1 pour Optimisation](./indexes-d1-pour-optimisation.md)
+- [Infrastructure & Deployment](./infrastructure-deployment.md)
+- [Limites D1 Free Tier (appliquées depuis 10 février 2025)](./limites-d1-free-tier-appliquees-depuis-10-fevrier-2025.md)
+- [Modules Nuxt Finaux](./modules-nuxt-finaux.md)
+- [@nuxt/content v3 API Changes](./nuxtcontent-v3-api-changes.md)
+- [Optimisations Bundle i18n (Tree-shaking)](./optimisations-bundle-i18n-tree-shaking.md)
+- [Performance Monitoring](./performance-monitoring.md)
+- [Search Strategy](./search-strategy.md)
+- [SEO & GEO Implementation](./seo-geo-implementation.md)
+- [SSG Build Performance](./ssg-build-performance.md)
+- [Tree Shaking et Optimisation Bundle](./tree-shaking-et-optimisation-bundle.md)
+- [Validation Strategy](./validation-strategy.md)
