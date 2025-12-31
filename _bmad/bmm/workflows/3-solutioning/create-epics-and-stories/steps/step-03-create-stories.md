@@ -49,6 +49,7 @@ To generate all epics with their stories based on the approved epics_list, follo
 - 💬 Each story must have clear acceptance criteria
 - 🚪 ENSURE each story is completable by a single dev agent
 - 🔗 **CRITICAL: Stories MUST NOT depend on future stories within the same epic**
+- 🔀 **CRITICAL: Analyze each story for PR breakdown to facilitate code reviews**
 
 ## EXECUTION PROTOCOLS:
 
@@ -94,6 +95,15 @@ Stories must be independently completable in sequence:
 - ❌ WRONG: "Wait for Story 1.4 to be implemented before this works"
 - ✅ RIGHT: "This story works independently and enables future stories"
 
+**🔀 PR BREAKDOWN PRINCIPLE:**
+Stories that span multiple technical concerns should be broken into reviewable PRs:
+
+- ✅ Analyze story complexity BEFORE writing acceptance criteria
+- ✅ Each PR = one logical concept for the reviewer to understand
+- ✅ PRs must be independently mergeable without breaking the build
+- ❌ WRONG: One massive PR touching infrastructure, logic, UI, and tests
+- ✅ RIGHT: Separate PRs for each layer, each reviewable in 15-20 min
+
 **STORY FORMAT (from template):**
 
 ```
@@ -132,6 +142,82 @@ _Epic 2: Content Creation_
 - Story: "Build authentication system" (too large)
 - Story: "Login UI (depends on Story 1.3 API endpoint)" (future dependency!)
 - Story: "Edit post (requires Story 1.4 to be implemented first)" (wrong order!)
+
+**🔀 PR BREAKDOWN ANALYSIS CRITERIA:**
+
+Analyze each story against these factors to determine if PR breakdown is needed:
+
+| Factor | Triggers Breakdown | Single PR OK |
+|--------|-------------------|--------------|
+| **Technical Layers** | Touches 3+ layers (types, services, UI, tests) | Touches 1-2 related layers |
+| **Business Logic** | Complex algorithms, state machines, validations | Simple CRUD, straightforward flow |
+| **Modules/Domains** | Impacts multiple domains (auth + blog + search) | Single domain focus |
+| **New Patterns** | Introduces new architectural patterns | Uses existing patterns |
+| **External Systems** | New API integrations, third-party services | Internal code only |
+
+**PR BREAKDOWN PATTERN (when needed):**
+
+```
+PR 1: Infrastructure (~100-150 lines)
+  - Dependencies (package.json)
+  - TypeScript types/interfaces
+  - Configuration files
+  - Objective: "Establish the data structures and dependencies"
+  - Verifiable by: Types compile, deps install correctly
+
+PR 2: Core Logic (~200-250 lines)
+  - Services / composables / API handlers
+  - Business logic implementation
+  - Unit tests for logic
+  - Objective: "Implement the core functionality"
+  - Verifiable by: Unit tests pass, logic works in isolation
+
+PR 3: UI / Presentation (~200-300 lines)
+  - Vue/React components
+  - Styles and accessibility
+  - Component tests
+  - Objective: "Create the user interface"
+  - Verifiable by: Component renders, accessible, styled
+
+PR 4: Integration (~100-150 lines)
+  - Connect all pieces
+  - Activate feature (remove feature flag if used)
+  - E2E tests
+  - Documentation updates
+  - Objective: "Enable the complete feature"
+  - Verifiable by: E2E tests pass, feature works end-to-end
+```
+
+**PR BREAKDOWN FORMAT (in story):**
+
+```
+#### PR Breakdown Plan
+
+**Breakdown Rationale:**
+This story touches infrastructure (new types), core logic (search indexing),
+UI (SearchBar component), and integration. Breaking into 4 PRs ensures each
+can be reviewed in ~15 min with clear focus.
+
+**PR 1.2.1: Search infrastructure**
+- Objective: Add MiniSearch dependency and TypeScript types
+- Scope: package.json, types/search.ts, nuxt.config.ts
+- Verifiable by: Types compile, dependency installs
+
+**PR 1.2.2: Search indexing logic**
+- Objective: Implement build-time index generation
+- Scope: scripts/generate-search-index.ts, tests/search.test.ts
+- Verifiable by: Index generates correctly, unit tests pass
+
+**PR 1.2.3: SearchBar component**
+- Objective: Create accessible search UI with results display
+- Scope: components/SearchBar.vue, styles, component tests
+- Verifiable by: Component renders, keyboard navigation works
+
+**PR 1.2.4: Search integration**
+- Objective: Integrate search in layout and activate feature
+- Scope: layouts/default.vue, e2e/search.spec.ts
+- Verifiable by: E2E tests pass, search works from any page
+```
 
 ### 3. Process Epics Sequentially
 
@@ -178,7 +264,36 @@ After writing each story:
 - "Is the scope appropriate for a single dev session?"
 - "Are the acceptance criteria complete and testable?"
 
-#### E. Append to Document
+#### E. PR Breakdown Analysis
+
+After acceptance criteria are approved, analyze the story for PR breakdown:
+
+1. **Assess Complexity Factors:**
+   - How many technical layers does this story touch?
+   - Is there complex business logic requiring isolated review?
+   - Does it impact multiple modules/domains?
+   - Are new patterns or external integrations involved?
+
+2. **Make Breakdown Decision:**
+   - If 2+ factors trigger breakdown → propose PR plan
+   - If story is cohesive → mark as "Single PR"
+
+3. **If Breakdown Needed, Propose PR Plan:**
+   - Present the breakdown rationale to user
+   - List each PR with: objective, scope, verification criteria
+   - Ask: "Does this breakdown make sense for review? Any adjustments?"
+
+4. **PR Naming Convention:**
+   - Use format: PR {Epic}.{Story}.{PR number}
+   - Example: PR 1.2.1, PR 1.2.2, PR 1.2.3
+
+5. **Validation Checklist for Each PR:**
+   - [ ] Single clear objective
+   - [ ] Independently mergeable (doesn't break build)
+   - [ ] Testable/verifiable in isolation
+   - [ ] Reviewable in ~15-20 minutes
+
+#### F. Append to Document
 
 When story is approved:
 
@@ -221,6 +336,7 @@ The final {outputFile} must follow this structure exactly:
    - All stories for that epic (M = 1, 2, 3...)
      - Story title and user story
      - Acceptance Criteria using Given/When/Then format
+     - **PR Breakdown Plan** (if story requires multiple PRs) OR "Single PR" statement
 
 ### 7. Present FINAL MENU OPTIONS
 
@@ -258,6 +374,9 @@ ONLY WHEN [C continue option] is selected and [all epics and stories saved to do
 - All FRs covered by stories
 - Stories appropriately sized
 - Acceptance criteria are specific and testable
+- **PR breakdown analyzed for each story**
+- **Complex stories have clear PR plans with objectives, scope, and verification**
+- **Simple stories marked as "Single PR"**
 - Document is complete and ready for development
 
 ### ❌ SYSTEM FAILURE:
@@ -267,5 +386,7 @@ ONLY WHEN [C continue option] is selected and [all epics and stories saved to do
 - Stories too large or unclear
 - Missing acceptance criteria
 - Not following proper formatting
+- **Skipping PR breakdown analysis**
+- **PRs without clear objectives or verification criteria**
 
 **Master Rule:** Skipping steps, optimizing sequences, or not following exact instructions is FORBIDDEN and constitutes SYSTEM FAILURE.

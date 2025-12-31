@@ -54,4 +54,31 @@ So that {{value_benefit}}.
 **Then** {{expected_outcome}}
 **And** {{additional_criteria}}
 
+<!-- PR breakdown section - include only if story requires multiple PRs -->
+
+#### PR Breakdown Plan
+
+<!-- Analysis determines if breakdown is needed based on:
+     - Multiple technical layers touched (infra, logic, UI, integration)
+     - Complex business logic requiring isolated review
+     - Multiple domains/modules impacted
+     - New patterns or significant architectural changes
+-->
+
+**Breakdown Rationale:**
+{{breakdown_rationale}}
+
+<!-- Repeat for each PR (P = 1, 2, 3...) -->
+
+**PR {{N}}.{{M}}.{{P}}: {{pr_title}}**
+- **Objective:** {{pr_objective}}
+- **Scope:** {{pr_scope}}
+- **Verifiable by:** {{pr_verification}}
+
+<!-- End PR repeat -->
+
+<!-- If no breakdown needed, replace this section with:
+**Single PR:** This story is cohesive enough for a single PR.
+-->
+
 <!-- End story repeat -->
