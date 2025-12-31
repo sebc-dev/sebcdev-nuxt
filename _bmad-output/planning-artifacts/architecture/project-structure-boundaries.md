@@ -50,7 +50,7 @@ sebc-dev/
 │   │   ├── useArticleFilters.ts         # Logique filtres
 │   │   ├── useTableOfContents.ts        # Section active ToC
 │   │   ├── useSeoMeta.ts                # Meta SEO/Schema
-│   │   └── usePagefind.ts               # Intégration Pagefind search
+│   │   └── useSearch.ts                 # Intégration MiniSearch
 │   ├── layouts/
 │   │   ├── default.vue                  # Layout principal
 │   │   └── article.vue                  # Layout page article
@@ -63,7 +63,13 @@ sebc-dev/
 │   │   │   └── [pillar].vue             # Articles par pilier
 │   │   ├── a-propos.vue                 # Page À propos
 │   │   └── [...slug].vue                # Catch-all 404
+│   ├── middleware/
+│   │   ├── 01.analytics.global.ts       # Global - tracking (ordre numérique)
+│   │   ├── 02.redirects.global.ts       # Global - redirections
+│   │   └── draft-protection.ts          # Named - protection drafts
 │   ├── plugins/
+│   │   ├── formatting.ts                # Universal - helpers formatage
+│   │   ├── analytics.client.ts          # Client only - tracking
 │   │   └── ssr-width.ts                 # Fix hydration shadcn
 │   └── utils/
 │       └── formatDate.ts                # Formatage dates Intl
@@ -83,10 +89,7 @@ sebc-dev/
 │   ├── favicon.ico
 │   ├── robots.txt
 │   ├── llms.txt                         # Généré au build
-│   ├── pagefind/                        # Généré post-build par Pagefind
-│   │   ├── pagefind.js                  # API client (36KB)
-│   │   ├── pagefind-ui.js               # UI optionnelle
-│   │   └── index/                       # Chunks d'index
+│   ├── search-index.json                # Généré post-build par script MiniSearch
 │   └── images/
 │       └── og/                          # Images OpenGraph
 ├── server/
@@ -108,19 +111,70 @@ sebc-dev/
 ├── package.json
 ├── pnpm-lock.yaml
 ├── tsconfig.json
-└── wrangler.toml                        # Config Cloudflare Pages (optionnel)
+└── wrangler.toml                        # Config Cloudflare D1 (OBLIGATOIRE)
 ```
+
+**Configuration wrangler.toml (OBLIGATOIRE) :**
+
+```toml
+name = "sebc-dev"
+compatibility_date = "2024-09-19"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "content-db"
+database_id = "VOTRE_DATABASE_ID"  # Généré par: wrangler d1 create content-db
+```
+
+> **⚠️ CRITIQUE :** Sans cette configuration, le runtime Cloudflare Worker échouera avec une erreur 500 car il n'a pas accès au filesystem pour lire SQLite.
 
 **Configuration pnpm 10 (dans package.json) :**
 ```json
 {
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "sharp", "pagefind"]
+    "onlyBuiltDependencies": ["esbuild", "sharp"]
   }
 }
 ```
 
 > **Note :** La syntaxe `.npmrc` avec `pnpm.onlyBuiltDependencies[]` est incorrecte pour pnpm 10.
+
+## Conventions de Nommage Fichiers
+
+**Suffixes spéciaux Nuxt:**
+
+| Suffixe | Contexte | Exemple |
+|---------|----------|---------|
+| `.client.ts` | Client uniquement | `analytics.client.ts` |
+| `.server.ts` | Serveur uniquement | `database.server.ts` |
+| `.server.vue` | Server Component (0 JS client) | `BlogContent.server.vue` |
+| `.global.ts` | Middleware global | `01.analytics.global.ts` |
+
+**Ordre d'exécution middleware global:**
+- Numérotation préfixée: `01.setup.global.ts`, `02.redirects.global.ts`
+- Exécutés dans l'ordre alphabétique
+
+**Auto-import composables:**
+
+```
+app/composables/
+├── index.ts              # Scanné ✅
+├── useBlogPost.ts        # Scanné ✅
+├── useBlogSearch.ts      # Scanné ✅
+└── utils/
+    └── helpers.ts        # NON scanné par défaut
+```
+
+Pour scanner les sous-dossiers:
+
+```typescript
+// nuxt.config.ts
+export default defineNuxtConfig({
+  imports: {
+    dirs: ['composables', 'composables/**']
+  }
+})
+```
 
 ## Architectural Boundaries
 
@@ -146,20 +200,36 @@ Content (MDC files)
       ↓
 Content 3 Collections (build time)
       ↓
-SSG HTML Output (.output/public)
+┌─────────────────────────────────────┐
+│ Génération simultanée               │
+├─────────────────────────────────────┤
+│ • SSG HTML Output (.output/public)  │
+│ • Migrations D1 (schéma + données)  │
+└─────────────────────────────────────┘
       ↓
-Pagefind Indexation (post-build hook)
+MiniSearch Index Generation (post-build script)
       ↓
-Index Chunks (chargés à la demande)
+Cloudflare Deployment
+      ↓
+┌─────────────────────────────────────┐
+│ Runtime Cloudflare Worker           │
+├─────────────────────────────────────┤
+│ • HTML statique (CDN Edge)          │
+│ • API Content → D1 (Worker)         │
+└─────────────────────────────────────┘
       ↓
 Vue Components (display)
 ```
 
-**Search Flow (Pagefind):**
+**⚠️ Sans D1 :** Le Worker n'a pas accès au filesystem → Erreur 500 sur toute requête API Content
+
+**Search Flow (MiniSearch):**
 
 ```
-User Input → Pagefind API → Index Chunks Download → Results → Command Palette
-           (36KB API client)  (FR/EN stemming)
+Command Palette Open → Fetch search-index.json → Initialize MiniSearch (~7KB)
+                              ↓
+User Input → MiniSearch.search() → Fuzzy/Prefix Matching → Results Display
+           (boosted: title 2x)    (stemming FR/EN)
 ```
 
 ## Requirements to Structure Mapping
@@ -172,7 +242,7 @@ User Input → Pagefind API → Index Chunks Download → Results → Command Pa
 | **FR11-13 Code Blocks** | `components/prose/ProseCode.vue` |
 | **FR14-20 Navigation** | `components/layout/*`, `pages/piliers/[pillar].vue` |
 | **FR21-24 Badges** | `components/ui/badge/`, `components/content/ArticleMeta.vue` |
-| **FR27-36 Recherche/Filtres** | `components/search/*`, `composables/usePagefind.ts`, `composables/useArticleFilters.ts` |
+| **FR27-36 Recherche/Filtres** | `components/search/*`, `composables/useSearch.ts`, `composables/useArticleFilters.ts` |
 | **FR37-40 Bilingue** | `i18n/*`, `components/layout/LanguageSwitcher.vue` |
 | **FR41-45 SEO/GEO** | `composables/useSeoMeta.ts`, `server/routes/llms.txt.ts` |
 | **Performance** | `nuxt.config.ts` (features.inlineStyles, nuxt-vitalizer, hydrate-on-*), `@nuxt/image` |
@@ -182,10 +252,11 @@ User Input → Pagefind API → Index Chunks Download → Results → Command Pa
 
 | Service | Intégration | Fichiers |
 |---------|-------------|----------|
+| **Cloudflare D1** | Base de données Content (OBLIGATOIRE) | `wrangler.toml`, `nuxt.config.ts` |
+| **Cloudflare Pages** | Build output + Worker | `wrangler.toml`, `nuxt.config.ts` |
 | **Plausible Analytics** | Script + runtimeConfig | `nuxt.config.ts`, `app.vue` |
-| **Cloudflare Pages** | Build output + Pagefind | `wrangler.toml`, `nuxt.config.ts` |
 | **GitHub** | Git push → auto-deploy | `.github/CODEOWNERS` |
-| **Pagefind** | Script post-build | `package.json` (script build: "nuxt build && npx pagefind...") |
+| **MiniSearch** | Script post-build | `package.json` (script: "postgenerate": "node scripts/generate-search-index.mjs") |
 
 ## Incompatibilités Identifiées
 
@@ -193,12 +264,11 @@ User Input → Pagefind API → Index Chunks Download → Results → Command Pa
 |-----------|----------|----------|
 | `@nuxtjs/tailwindcss` v6.14 | Supporte TW4, mais moins adapté CSS-first | `@tailwindcss/vite` recommandé |
 | shadcn-vue tooltips | ❌ WCAG SC 1.4.13 | Tests manuels NVDA/VoiceOver |
-| SQLite WASM | Surdimensionné (500KB+) | Pagefind 1.4+ (~8KB + chunks) |
+| SQLite WASM | Surdimensionné (500KB+) | MiniSearch (~7KB minified) |
 | `nuxt-delay-hydration` | ❌ Obsolète depuis Nuxt 3.16+ | Hydratation lazy native (hydrate-on-*) |
 | `experimental.inlineSSRStyles` | ❌ Renommé en Nuxt 4 | `features.inlineStyles` |
 | `radix-vue` | ❌ Rebrandé (février 2025) | `reka-ui` |
-| `@zod/mini` package | ❌ Déprécié | `import { z } from 'zod'` ou `'zod/mini'` |
-| `hooks.build:done` Pagefind | ❌ Timing incorrect | Script `package.json` post-build (plus robuste pour SSG) |
+| `@zod/mini` package | ❌ Déplacé (mai 2025) | `import { z } from 'zod'` ou `import * as z from 'zod/mini'` (path, pas package) |
 
 ## Paramètres Cloudflare Pages
 
