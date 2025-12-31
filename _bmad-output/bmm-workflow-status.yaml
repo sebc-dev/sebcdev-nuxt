@@ -60,17 +60,18 @@ workflow_status:
         note: "Architecture complète avec patterns d'implémentation (244 fichiers)"
 
       - id: "create-epics-and-stories"
-        status: "required"
+        status: "_bmad-output/planning-artifacts/epics/index.md"
         agent: "pm"
         command: "/bmad:bmm:workflows:create-epics-and-stories"
-        note: "Requis: Décomposer le PRD en epics et stories implémentables avec contexte complet (PRD + UX + Architecture)"
+        completed: "2025-12-31"
+        note: "7 epics créés avec stories détaillées (Core Reading, Rich Articles, Navigation, Homepage, Search, Bilingual, SEO)"
 
       - id: "test-design"
-        status: "recommended"
+        status: "_bmad-output/test-design-system.md"
         agent: "tea"
         command: "/bmad:bmm:workflows:testarch-test-design"
-        output: "System-level testability review"
-        note: "Évaluation de testabilité avant gate check - détecte automatiquement le mode system-level"
+        completed: "2025-12-31"
+        note: "Revue testabilité système - PASS avec recommandations Sprint 0"
 
       - id: "validate-architecture"
         status: "optional"

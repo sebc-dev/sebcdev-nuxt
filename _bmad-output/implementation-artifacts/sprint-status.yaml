@@ -1,0 +1,101 @@
+# generated: 2025-12-31
+# project: sebc.dev
+# project_key: sebcdev
+# tracking_system: file-system
+# story_location: /home/negus/dev/sebcdev-nuxt/_bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2025-12-31
+project: sebc.dev
+project_key: sebcdev
+tracking_system: file-system
+story_location: /home/negus/dev/sebcdev-nuxt/_bmad-output/implementation-artifacts
+
+development_status:
+  # Epic 1: Core Reading Experience
+  epic-1: in-progress
+  1-1-project-foundation-first-article-display: ready-for-dev
+  1-2-dark-theme-typography-system: ready-for-dev
+  1-3-responsive-layout-system: ready-for-dev
+  1-4-cloudflare-pages-deployment: ready-for-dev
+  epic-1-retrospective: optional
+
+  # Epic 2: Rich Article Experience
+  epic-2: in-progress
+  2-1-article-metadata-badges: ready-for-dev
+  2-2-reading-time-publication-date: ready-for-dev
+  2-3-table-of-contents: ready-for-dev
+  2-4-reading-progress-indicator: ready-for-dev
+  2-5-expandable-approfondir-sections: backlog
+  2-6-code-blocks-with-syntax-highlighting-copy: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: Navigation System
+  epic-3: backlog
+  3-1-header-with-logo-and-main-navigation: backlog
+  3-2-navigation-dropdowns-themes-categories-levels: backlog
+  3-3-language-switcher: backlog
+  3-4-clickable-badge-navigation: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Homepage & Static Pages
+  epic-4: backlog
+  4-1-featured-article-hero: backlog
+  4-2-article-grid: backlog
+  4-3-about-page: backlog
+  epic-4-retrospective: optional
+
+  # Epic 5: Search & Filtering
+  epic-5: backlog
+  5-1-search-page-layout: backlog
+  5-2-minisearch-integration-index-generation: backlog
+  5-3-metadata-filters-theme-category-tag-level: backlog
+  5-4-time-date-filters: backlog
+  5-5-url-deep-linking-filter-reset: backlog
+  5-6-pagination: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: Full Bilingual Support
+  epic-6: backlog
+  6-1-i18n-configuration-url-structure: backlog
+  6-2-bilingual-content-structure: backlog
+  6-3-language-switching-with-state-preservation: backlog
+  6-4-browser-language-detection: backlog
+  epic-6-retrospective: optional
+
+  # Epic 7: SEO & Discovery Optimization
+  epic-7: backlog
+  7-1-llmstxt-for-ai-discoverability: backlog
+  7-2-schemaorg-markup-techarticle-faq: backlog
+  7-3-xml-sitemap-generation: backlog
+  7-4-open-graph-twitter-cards: backlog
+  7-5-rss-feeds: backlog
+  epic-7-retrospective: optional
