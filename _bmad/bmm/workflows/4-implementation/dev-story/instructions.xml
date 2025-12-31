@@ -134,7 +134,7 @@
     <action if="incomplete task or subtask requirements ambiguous">ASK user to clarify or HALT</action>
   </step>
 
-  <step n="2" goal="Load project context and story information">
+  <step n="2" goal="Load project context, story information, and PR context">
     <critical>Load all available context to inform implementation</critical>
 
     <action>Load {project_context} for coding standards and project-wide patterns (if exists)</action>
@@ -142,6 +142,23 @@
     <action>Load comprehensive context from story file's Dev Notes section</action>
     <action>Extract developer guidance from Dev Notes: architecture requirements, previous learnings, technical specifications</action>
     <action>Use enhanced story context to inform implementation decisions and approaches</action>
+
+    <!-- PR BREAKDOWN CONTEXT - Critical for atomic commits -->
+    <action>Parse "PR Breakdown Plan" section from story file</action>
+    <check if="PR Breakdown Plan section exists">
+      <action>Extract all PR definitions (PR X.X.Y: objective, scope, verification)</action>
+      <action>Build PR-to-Task mapping: which tasks belong to which PR</action>
+      <action>Store as {{pr_breakdown_context}} for use during commits</action>
+      <output>📋 **PR Breakdown Loaded**
+        {{pr_count}} PRs defined for this story
+        Commits will be tagged with corresponding PR reference
+      </output>
+    </check>
+    <check if="PR Breakdown Plan section does NOT exist">
+      <action>Set {{pr_breakdown_context}} = null</action>
+      <output>ℹ️ No PR Breakdown Plan - commits will use story_key as reference</output>
+    </check>
+
     <output>✅ **Context Loaded**
       Story and project context available for implementation
     </output>
@@ -269,7 +286,7 @@
     <action if="new tests fail">STOP and fix before continuing - ensure implementation correctness</action>
   </step>
 
-  <step n="8" goal="Validate and mark task complete ONLY when fully done">
+  <step n="8" goal="Validate, commit atomically, and mark task complete ONLY when fully done">
     <critical>NEVER mark a task complete unless ALL conditions are met - NO LYING OR CHEATING</critical>
 
     <!-- VALIDATION GATES -->
@@ -298,6 +315,9 @@
       <action>ONLY THEN mark the task (and subtasks) checkbox with [x]</action>
       <action>Update File List section with ALL new, modified, or deleted files (paths relative to repo root)</action>
       <action>Add completion notes to Dev Agent Record summarizing what was ACTUALLY implemented and tested</action>
+
+      <!-- ATOMIC COMMIT - Critical for code review facilitation -->
+      <invoke-protocol name="atomic_commit" />
     </check>
 
     <check if="ANY validation fails">
@@ -405,5 +425,172 @@
     </check>
     <action>Remain flexible - allow user to choose their own path or ask for other assistance</action>
   </step>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+  <!-- PROTOCOLS - Reusable atomic operations invoked via invoke-protocol tag          -->
+  <!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+
+  <protocols>
+    <protocol name="atomic_commit" desc="Create atomic commit after task completion to facilitate code reviews">
+      <objective>Create a well-structured, atomic commit that maps to a single task/subtask for easy PR review</objective>
+
+      <critical>Each task completion MUST result in exactly ONE commit</critical>
+      <critical>Commit messages MUST reference the PR context from story's "PR Breakdown Plan" section</critical>
+      <critical>Commits are the atomic unit of a PR - they must tell a clear story for reviewers</critical>
+
+      <flow>
+        <step n="1" title="Extract PR Context from Story">
+          <action>Parse the "PR Breakdown Plan" section from the current story file</action>
+          <action>Identify which PR the current task belongs to by matching task scope with PR scope</action>
+          <action>Extract PR identifier (e.g., "PR 1.1.1", "PR 1.1.2") as {{current_pr}}</action>
+          <action>Extract PR objective as {{pr_objective}}</action>
+
+          <check if="no PR Breakdown Plan exists">
+            <action>Use story_key as fallback PR context: {{story_key}}</action>
+            <action>Set {{current_pr}} = "{{story_key}}"</action>
+          </check>
+        </step>
+
+        <step n="2" title="Build Atomic Commit Message">
+          <action>Extract current task number and description (e.g., "Task 3: Configuration D1")</action>
+          <action>Extract subtask if applicable (e.g., "3.1 Créer wrangler.toml")</action>
+          <action>Extract related acceptance criteria (AC: #X, #Y)</action>
+
+          <commit-format critical="true">
+            <title-format>[{{current_pr}}] {{task_description}}</title-format>
+            <body-format>
+## What
+{{concise_description_of_changes}}
+
+## Files Changed
+{{bulleted_list_of_files}}
+
+## Acceptance Criteria
+{{related_ACs_with_status}}
+
+## Subtasks Completed
+{{checked_subtasks_if_any}}
+            </body-format>
+          </commit-format>
+
+          <examples>
+            <example title="Infrastructure task">
+[PR 1.1.1] Task 1: Nuxt 4 project initialization
+
+## What
+Initialize Nuxt 4.2.2 project with core dependencies and TailwindCSS 4 configuration.
+
+## Files Changed
+- package.json (new)
+- nuxt.config.ts (new)
+- .nvmrc (new)
+- pnpm-workspace.yaml (new)
+- app/assets/css/main.css (new)
+
+## Acceptance Criteria
+- ✅ AC1: Projet Nuxt 4 initialisé
+
+## Subtasks Completed
+- [x] 1.1 Create project with nuxi
+- [x] 1.2 Install core dependencies
+- [x] 1.3 Install TailwindCSS
+- [x] 1.4 Create .nvmrc
+- [x] 1.5 Configure pnpm-workspace.yaml
+            </example>
+
+            <example title="Feature task">
+[PR 1.1.3] Task 7: Article page implementation
+
+## What
+Implement dynamic article page with Content query and MDC rendering.
+
+## Files Changed
+- app/pages/articles/[slug].vue (new)
+
+## Acceptance Criteria
+- ✅ AC2: Navigation article fonctionne
+- ✅ AC3: Rendu Markdown correct
+- ✅ AC4: Images lazy-loaded
+
+## Subtasks Completed
+- [x] 7.1 Implement queryCollection()
+- [x] 7.2 Use ContentRenderer
+- [x] 7.3 Use NuxtImg for images
+- [x] 7.4 Handle 404 case
+            </example>
+
+            <example title="Subtask-level commit (granular)">
+[PR 1.1.2] Task 3.2: Create wrangler.toml with D1 binding
+
+## What
+Configure Cloudflare Workers with D1 database binding for Nuxt Content.
+
+## Files Changed
+- wrangler.toml (new)
+
+## Acceptance Criteria
+- 🔄 AC6: D1 configuration (partial - binding configured)
+            </example>
+          </examples>
+        </step>
+
+        <step n="3" title="Stage and Commit Changes">
+          <action>Run `git status` to identify all changed files for this task</action>
+          <action>Stage ONLY files related to the current task (not unrelated changes)</action>
+
+          <check if="unrelated files are modified">
+            <action>Warn: "Found unrelated changes. Only staging files for current task."</action>
+            <action>List unrelated files that will NOT be committed</action>
+          </check>
+
+          <action>Stage task-related files: `git add {{task_files}}`</action>
+          <action>Create commit with formatted message using HEREDOC for proper formatting</action>
+          <action>Verify commit was created successfully</action>
+
+          <output>📝 **Atomic Commit Created**
+            PR: {{current_pr}}
+            Task: {{task_description}}
+            Files: {{file_count}} files committed
+            Commit: {{short_hash}}
+          </output>
+        </step>
+
+        <step n="4" title="Commit Granularity Decision">
+          <critical>Decide commit granularity based on task complexity</critical>
+
+          <granularity-rules>
+            <rule name="task-level" condition="Task has 1-3 subtasks OR subtasks are tightly coupled">
+              <action>Commit at TASK level (all subtasks in one commit)</action>
+              <rationale>Keeps related changes together for easier review</rationale>
+            </rule>
+
+            <rule name="subtask-level" condition="Task has 4+ subtasks OR subtasks are independent">
+              <action>Commit at SUBTASK level (one commit per subtask)</action>
+              <rationale>Allows granular review of distinct changes</rationale>
+            </rule>
+
+            <rule name="logical-grouping" condition="Multiple subtasks form a logical unit">
+              <action>Group related subtasks in one commit</action>
+              <example>Subtasks 3.1 + 3.2 (both wrangler config) → one commit</example>
+            </rule>
+          </granularity-rules>
+
+          <anti-patterns>
+            <avoid>Mixing unrelated changes in one commit</avoid>
+            <avoid>Commits that break the build or tests</avoid>
+            <avoid>Commits without clear task reference</avoid>
+            <avoid>Giant commits spanning multiple tasks</avoid>
+          </anti-patterns>
+        </step>
+      </flow>
+
+      <pr-alignment>
+        <principle>Commits within a PR should tell a coherent story</principle>
+        <principle>Each commit should be reviewable in isolation</principle>
+        <principle>Commit order should reflect logical implementation flow</principle>
+        <principle>PR reviewers can understand the feature by reading commits sequentially</principle>
+      </pr-alignment>
+    </protocol>
+  </protocols>
 
 </workflow>
